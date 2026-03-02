@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "cjm-transcription-source-select"
+  site-url: "https://cj-mills.github.io/cjm-transcription-source-select"
+  description: "FastHTML source selection component for transcription workflows that provides local file browsing with audio/video preview, selection ordering, and integrated audio extraction from video sources."
+  repo-branch: main
+  repo-url: "https://github.com/cj-mills/cjm-transcription-source-select"
