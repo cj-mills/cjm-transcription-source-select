@@ -8,3 +8,169 @@
 ``` bash
 pip install cjm_transcription_source_select
 ```
+
+## Project Structure
+
+    nbs/
+    ├── html_ids.ipynb # HTML ID constants for the transcription source selection step
+    ├── models.ipynb   # Data models and URL bundles for the transcription source selection step
+    └── utils.ipynb    # Utility functions for file type detection, duration formatting, and extension filtering
+
+Total: 3 notebooks across 3 directories
+
+## Module Dependencies
+
+``` mermaid
+graph LR
+    html_ids[html_ids<br/>html_ids]
+    models[models<br/>models]
+    utils[utils<br/>utils]
+```
+
+No cross-module dependencies detected.
+
+## CLI Reference
+
+No CLI commands found in this project.
+
+## Module Overview
+
+Detailed documentation for each module in the project:
+
+### html_ids (`html_ids.ipynb`)
+
+> HTML ID constants for the transcription source selection step
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.html_ids import (
+    SourceSelectHtmlIds
+)
+```
+
+#### Classes
+
+``` python
+class SourceSelectHtmlIds:
+    "HTML ID constants for the transcription source selection step."
+    
+    def as_selector(
+            id_str: str  # The HTML ID to convert
+        ) -> str:  # CSS selector with # prefix
+        "Convert an ID to a CSS selector format."
+    
+    def file_item(
+            file_path: str  # Absolute path to the file
+        ) -> str:  # HTML ID for the file item in the browser
+        "Generate HTML ID for a file item in the browser list."
+    
+    def selection_item(
+            file_path: str  # Absolute path to the file
+        ) -> str:  # HTML ID for the selection list item
+        "Generate HTML ID for a selected file item."
+    
+    def extraction_status(
+            file_path: str  # Absolute path to the video file
+        ) -> str:  # HTML ID for the extraction status indicator
+        "Generate HTML ID for a video file's extraction status."
+```
+
+### models (`models.ipynb`)
+
+> Data models and URL bundles for the transcription source selection
+> step
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.models import (
+    SelectedFile,
+    ExtractionResult,
+    SourceSelectState,
+    SourceSelectUrls
+)
+```
+
+#### Classes
+
+``` python
+class SelectedFile(TypedDict):
+    "A selected audio or video file."
+```
+
+``` python
+class ExtractionResult(TypedDict):
+    "Audio extraction result for a video file."
+```
+
+``` python
+class SourceSelectState(TypedDict):
+    "State for the transcription source selection step."
+```
+
+``` python
+@dataclass
+class SourceSelectUrls:
+    "URL bundle for transcription source selection routes."
+    
+    add: str = ''  # Add file to selection
+    remove: str = ''  # Remove file from selection
+    reorder: str = ''  # Reorder selection (SortableJS)
+    clear: str = ''  # Clear all selected files
+    add_all: str = ''  # Add all files in current directory
+    navigate: str = ''  # Navigate to directory
+    file_info: str = ''  # Get file info (duration, metadata)
+    preview: str = ''  # Preview a file (render player)
+    verify: str = ''  # Verify selection + trigger extraction
+    extraction_status: str = ''  # Poll extraction status
+```
+
+### utils (`utils.ipynb`)
+
+> Utility functions for file type detection, duration formatting, and
+> extension filtering
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.utils import (
+    AUDIO_EXTENSIONS,
+    VIDEO_EXTENSIONS,
+    MEDIA_EXTENSIONS,
+    detect_file_type,
+    is_media_file,
+    format_duration
+)
+```
+
+#### Functions
+
+``` python
+def detect_file_type(
+    file_path: str  # Path to the file
+) -> Optional[str]:  # "audio", "video", or None if not a media file
+    "Detect whether a file is audio, video, or not a media file based on extension."
+```
+
+``` python
+def is_media_file(
+    file_path: str  # Path to the file
+) -> bool:  # True if the file has a supported media extension
+    "Check if a file has a supported audio or video extension."
+```
+
+``` python
+def format_duration(
+    seconds: Optional[float]  # Duration in seconds, or None
+) -> str:  # Formatted duration string (e.g. "1:23:45" or "42:17")
+    "Format a duration in seconds as H:MM:SS or MM:SS."
+```
+
+#### Variables
+
+``` python
+AUDIO_EXTENSIONS
+VIDEO_EXTENSIONS
+MEDIA_EXTENSIONS
+```
