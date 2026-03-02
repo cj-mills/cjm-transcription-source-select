@@ -36,6 +36,7 @@ class SourceSelectState(TypedDict, total=False):
 
     selected_files: List[SelectedFile]  # Ordered list of selected files
     current_directory: str  # Current file browser directory path
+    browser_state: Dict[str, Any]  # Serialized BrowserState from file-browser library
     extraction_results: Dict[str, ExtractionResult]  # video_path -> extraction result
     verified: bool  # Whether selection has been verified
     committed_audio_paths: List[str]  # Final audio paths for next step
@@ -45,20 +46,18 @@ class SourceSelectState(TypedDict, total=False):
 class SourceSelectUrls:
     """URL bundle for transcription source selection routes."""
 
-    # Selection operations
-    add: str = ""  # Add file to selection
+    # Browser operations
+    navigate: str = ""  # Navigate to directory
+    select: str = ""  # Toggle file selection (from file browser)
+
+    # Selection operations (Phase 3)
     remove: str = ""  # Remove file from selection
     reorder: str = ""  # Reorder selection (SortableJS)
     clear: str = ""  # Clear all selected files
-    add_all: str = ""  # Add all files in current directory
 
-    # Browser operations
-    navigate: str = ""  # Navigate to directory
-    file_info: str = ""  # Get file info (duration, metadata)
-
-    # Preview
+    # Preview (Phase 4)
     preview: str = ""  # Preview a file (render player)
 
-    # Verify
+    # Verify (Phase 5)
     verify: str = ""  # Verify selection + trigger extraction
     extraction_status: str = ""  # Poll extraction status

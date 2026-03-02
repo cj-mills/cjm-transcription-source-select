@@ -27,12 +27,14 @@ def main():
 
     from cjm_fasthtml_daisyui.core.resources import get_daisyui_headers
     from cjm_fasthtml_daisyui.core.testing import create_theme_persistence_script
-    from cjm_fasthtml_daisyui.components.data_display.badge import badge, badge_colors
-    from cjm_fasthtml_daisyui.utilities.semantic_colors import bg_dui, text_dui
+    from cjm_fasthtml_daisyui.components.actions.button import btn, btn_colors, btn_sizes
+    from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui, border_dui
 
     from cjm_fasthtml_tailwind.utilities.spacing import p, m
     from cjm_fasthtml_tailwind.utilities.sizing import container, max_w, w, h
     from cjm_fasthtml_tailwind.utilities.typography import font_size, font_weight, text_align
+    from cjm_fasthtml_tailwind.utilities.flexbox_and_grid import grid_display, grid_cols, gap
+    from cjm_fasthtml_tailwind.utilities.borders import rounded, border
     from cjm_fasthtml_tailwind.core.base import combine_classes
 
     from cjm_fasthtml_app_core.components.navbar import create_navbar
@@ -44,7 +46,15 @@ def main():
 
     from cjm_plugin_system.core.manager import PluginManager
 
-    from cjm_transcription_source_select.models import SourceSelectUrls, SourceSelectState
+    from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
+
+    from cjm_transcription_source_select.models import SourceSelectUrls
+    from cjm_transcription_source_select.routes.core import get_step_state, get_session_id_from_sess
+    from cjm_transcription_source_select.routes.browser import init_browser_router
+    from cjm_transcription_source_select.components.file_browser_panel import (
+        create_media_browser_config, get_browser_state, sync_browser_selection,
+        render_browser_panel,
+    )
 
     print("\n" + "=" * 70)
     print("Initializing cjm-transcription-source-select Demo")
@@ -84,21 +94,38 @@ def main():
         print(f"  No plugins discovered")
 
     # -------------------------------------------------------------------------
-    # Helper to get state
+    # File system provider and browser config
     # -------------------------------------------------------------------------
 
-    def get_step_state(sess) -> SourceSelectState:
-        """Get current source selection step state."""
-        from cjm_fasthtml_interactions.core.state_store import get_session_id
-        session_id = get_session_id(sess)
+    provider = LocalFileSystemProvider()
+    home_path = provider.get_home_path()
+    start_path = DEMO_MEDIA_DIR if Path(DEMO_MEDIA_DIR).exists() else home_path
+    browser_config = create_media_browser_config()
+    print(f"  File browser start: {start_path}")
 
-        state = state_store.get_state(workflow_id, session_id)
+    # -------------------------------------------------------------------------
+    # Initialize browser routes
+    # -------------------------------------------------------------------------
 
-        if not state:
-            state = {"step_states": {"source_select": {}}}
-            state_store.update_state(workflow_id, session_id, state)
+    urls = SourceSelectUrls()
 
-        return state.get("step_states", {}).get("source_select", {})
+    browser_router, browser_routes = init_browser_router(
+        state_store=state_store,
+        provider=provider,
+        config=browser_config,
+        workflow_id=workflow_id,
+        urls=urls,
+        home_path=home_path,
+        prefix="/browser",
+    )
+
+    # Populate URL bundle
+    urls.navigate = browser_routes["navigate"].to()
+    urls.select = browser_routes["select"].to()
+
+    print(f"  Browser routes initialized")
+    print(f"    navigate: {urls.navigate}")
+    print(f"    select: {urls.select}")
 
     # -------------------------------------------------------------------------
     # Page routes
@@ -131,7 +158,7 @@ def main():
                 A(
                     "Open Source Selection Demo",
                     href=demo_selection.to(),
-                    cls="btn btn-primary btn-lg"
+                    cls=combine_classes(btn, btn_colors.primary, btn_sizes.lg)
                 ),
 
                 cls=combine_classes(
@@ -149,21 +176,53 @@ def main():
         """Source selection step demo page."""
 
         def selection_content():
-            step_state = get_step_state(sess)
-            selected_files = step_state.get("selected_files", [])
-            verified = step_state.get("verified", False)
+            session_id = get_session_id_from_sess(sess)
+            step_state = get_step_state(state_store, workflow_id, session_id)
 
-            # Placeholder UI until full step renderer is built
+            # Get or create browser state
+            browser_state = get_browser_state(step_state, start_path)
+
+            # Sync selection highlights with selected_files
+            selected_files = step_state.get("selected_files", [])
+            sync_browser_selection(browser_state, selected_files)
+
+            # Render the file browser panel
+            browser_panel = render_browser_panel(
+                browser_state=browser_state,
+                config=browser_config,
+                provider=provider,
+                navigate_url=urls.navigate,
+                select_url=urls.select,
+                home_path=home_path,
+            )
+
+            # Selection summary
+            file_count = len(selected_files)
+            summary = f"{file_count} file{'s' if file_count != 1 else ''} selected"
+
             return Div(
                 H1("Source Selection",
                    cls=combine_classes(font_size._2xl, font_weight.bold, m.b(4))),
-                P(f"Selected files: {len(selected_files)}",
-                  cls=combine_classes(font_size.lg, m.b(2))),
-                P(f"Verified: {verified}",
-                  cls=combine_classes(font_size.lg, m.b(4))),
-                P("Full UI will be built in subsequent phases.",
-                  cls=combine_classes(text_dui.base_content, font_size.sm)),
-                cls=combine_classes(p(8))
+
+                # Two-column layout (browser left, selection summary right)
+                Div(
+                    # Left column: file browser
+                    Div(browser_panel, cls=w.full),
+
+                    # Right column: selection panel (placeholder for Phase 3)
+                    Div(
+                        P(summary,
+                          cls=combine_classes(font_size.lg, font_weight.bold, m.b(4))),
+                        *[P(f["filename"], cls=combine_classes(font_size.sm, m.b(1)))
+                          for f in selected_files],
+                        P("Full selection panel will be built in Phase 3.",
+                          cls=combine_classes(font_size.sm, text_dui.base_content, m.t(4))),
+                        cls=combine_classes(w.full, border(), border_dui.base_300, rounded.lg, p(4))
+                    ),
+
+                    cls=combine_classes(str(grid_display), grid_cols(1), grid_cols(2).lg, gap(4))
+                ),
+                cls=combine_classes(p(4))
             )
 
         return handle_htmx_request(
@@ -185,7 +244,7 @@ def main():
         theme_selector=True
     )
 
-    register_routes(app, router)
+    register_routes(app, router, browser_router)
 
     # Debug output
     print("\n" + "=" * 70)

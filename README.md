@@ -12,22 +12,37 @@ pip install cjm_transcription_source_select
 ## Project Structure
 
     nbs/
-    ├── html_ids.ipynb # HTML ID constants for the transcription source selection step
-    ├── models.ipynb   # Data models and URL bundles for the transcription source selection step
-    └── utils.ipynb    # Utility functions for file type detection, duration formatting, and extension filtering
+    ├── components/ (1)
+    │   └── file_browser_panel.ipynb  # File browser panel configuration and rendering for browsing local audio/video files
+    ├── routes/ (2)
+    │   ├── browser.ipynb  # Route handlers for file browser navigation and file selection
+    │   └── core.ipynb     # State management helpers for the transcription source selection step
+    ├── html_ids.ipynb  # HTML ID constants for the transcription source selection step
+    ├── models.ipynb    # Data models and URL bundles for the transcription source selection step
+    └── utils.ipynb     # Utility functions for file type detection, duration formatting, and extension filtering
 
-Total: 3 notebooks across 3 directories
+Total: 6 notebooks across 3 directories
 
 ## Module Dependencies
 
 ``` mermaid
 graph LR
+    components_file_browser_panel[components.file_browser_panel<br/>components/file_browser_panel]
     html_ids[html_ids<br/>html_ids]
     models[models<br/>models]
+    routes_browser[routes.browser<br/>routes/browser]
+    routes_core[routes.core<br/>routes/core]
     utils[utils<br/>utils]
+
+    components_file_browser_panel --> html_ids
+    routes_browser --> routes_core
+    routes_browser --> components_file_browser_panel
+    routes_browser --> models
+    routes_browser --> utils
+    routes_core --> models
 ```
 
-No cross-module dependencies detected.
+*6 cross-module dependencies detected*
 
 ## CLI Reference
 
@@ -36,6 +51,172 @@ No CLI commands found in this project.
 ## Module Overview
 
 Detailed documentation for each module in the project:
+
+### routes/browser (`browser.ipynb`)
+
+> Route handlers for file browser navigation and file selection
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.routes.browser import (
+    init_browser_router
+)
+```
+
+#### Functions
+
+``` python
+def _handle_navigate(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    provider: LocalFileSystemProvider,  # File system provider
+    config: FileBrowserConfig,  # Browser configuration
+    workflow_id: str,  # Workflow identifier
+    home_path: str,  # Home directory path
+    urls: SourceSelectUrls,  # URL bundle
+    sess,  # FastHTML session
+    path: str,  # Directory path to navigate to
+):  # Rendered browser panel
+    "Navigate to a directory and re-render the browser panel."
+```
+
+``` python
+def _handle_select(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    provider: LocalFileSystemProvider,  # File system provider
+    config: FileBrowserConfig,  # Browser configuration
+    workflow_id: str,  # Workflow identifier
+    home_path: str,  # Home directory path
+    urls: SourceSelectUrls,  # URL bundle
+    sess,  # FastHTML session
+    path: str,  # File path to toggle
+):  # Rendered browser panel
+    "Toggle a file in/out of the selected files list."
+```
+
+``` python
+def init_browser_router(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    provider: LocalFileSystemProvider,  # File system provider
+    config: FileBrowserConfig,  # Browser configuration
+    workflow_id: str,  # Workflow identifier
+    urls: SourceSelectUrls,  # Mutable URL bundle (populated after router init)
+    home_path: str = "",  # Home directory for nav buttons
+    prefix: str = "/browser",  # Route prefix
+) -> Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)
+    "Initialize the file browser router with navigate and select handlers."
+```
+
+### routes/core (`core.ipynb`)
+
+> State management helpers for the transcription source selection step
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.routes.core import (
+    STEP_KEY,
+    get_step_state,
+    update_step_state,
+    get_session_id_from_sess
+)
+```
+
+#### Functions
+
+``` python
+def get_step_state(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    workflow_id: str,  # Workflow identifier
+    session_id: str,  # Session identifier
+) -> SourceSelectState:  # Current step state (empty dict if not found)
+    "Retrieve the source selection step state."
+```
+
+``` python
+def update_step_state(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    workflow_id: str,  # Workflow identifier
+    session_id: str,  # Session identifier
+    **fields,  # Fields to update in the step state
+) -> SourceSelectState:  # Updated step state
+    "Update specific fields in the source selection step state."
+```
+
+``` python
+def get_session_id_from_sess(
+    sess: Any  # Session object from FastHTML
+) -> str:  # Session identifier string
+    "Extract session ID from a FastHTML session object."
+```
+
+#### Variables
+
+``` python
+STEP_KEY = 'source_select'
+```
+
+### components/file_browser_panel (`file_browser_panel.ipynb`)
+
+> File browser panel configuration and rendering for browsing local
+> audio/video files
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.components.file_browser_panel import (
+    AUDIO_FILTER_EXTENSIONS,
+    VIDEO_FILTER_EXTENSIONS,
+    MEDIA_FILTER_EXTENSIONS,
+    create_media_browser_config,
+    get_browser_state,
+    sync_browser_selection,
+    render_browser_panel
+)
+```
+
+#### Functions
+
+``` python
+def create_media_browser_config() -> FileBrowserConfig:  # Configured for audio/video file selection
+    "Create file browser config for audio/video file selection."
+```
+
+``` python
+def get_browser_state(
+    step_state: Dict[str, Any],  # Current step state
+    default_path: str = "",  # Default directory if no state exists
+) -> BrowserState:  # Browser state for the file browser
+    "Get or create BrowserState from step state."
+```
+
+``` python
+def sync_browser_selection(
+    browser_state: BrowserState,  # Browser state to update
+    selected_files: List[Dict[str, Any]],  # Current selected_files from step state
+) -> None:  # Modifies browser_state in place
+    "Sync browser selection state with the selected_files list."
+```
+
+``` python
+def render_browser_panel(
+    browser_state: BrowserState,  # Current browser state
+    config: FileBrowserConfig,  # Browser configuration
+    provider: LocalFileSystemProvider,  # File system provider
+    navigate_url: str,  # URL for directory navigation
+    select_url: str,  # URL for file selection toggle
+    home_path: str = "",  # Home directory for nav buttons
+) -> Any:  # Rendered file browser component
+    "Render the file browser panel using the library's built-in UI."
+```
+
+#### Variables
+
+``` python
+AUDIO_FILTER_EXTENSIONS = [8 items]
+VIDEO_FILTER_EXTENSIONS = [7 items]
+MEDIA_FILTER_EXTENSIONS
+```
 
 ### html_ids (`html_ids.ipynb`)
 
@@ -114,13 +295,11 @@ class SourceSelectState(TypedDict):
 class SourceSelectUrls:
     "URL bundle for transcription source selection routes."
     
-    add: str = ''  # Add file to selection
+    navigate: str = ''  # Navigate to directory
+    select: str = ''  # Toggle file selection (from file browser)
     remove: str = ''  # Remove file from selection
     reorder: str = ''  # Reorder selection (SortableJS)
     clear: str = ''  # Clear all selected files
-    add_all: str = ''  # Add all files in current directory
-    navigate: str = ''  # Navigate to directory
-    file_info: str = ''  # Get file info (duration, metadata)
     preview: str = ''  # Preview a file (render player)
     verify: str = ''  # Verify selection + trigger extraction
     extraction_status: str = ''  # Poll extraction status
