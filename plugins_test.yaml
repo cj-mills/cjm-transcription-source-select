@@ -6,7 +6,7 @@ plugins:
     env_name: test-ffmpeg
     
     # Environment File
-    env_file: "./environment.yml"
+    env_file: "https://raw.githubusercontent.com/cj-mills/cjm-media-plugin-ffmpeg/main/environment.yml"
     
     # The Plugin Package
     package: "git+https://github.com/cj-mills/cjm-media-plugin-ffmpeg.git"
