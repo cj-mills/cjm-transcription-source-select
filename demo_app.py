@@ -28,13 +28,11 @@ def main():
     from cjm_fasthtml_daisyui.core.resources import get_daisyui_headers
     from cjm_fasthtml_daisyui.core.testing import create_theme_persistence_script
     from cjm_fasthtml_daisyui.components.actions.button import btn, btn_colors, btn_sizes
-    from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui, border_dui
+    from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui
 
     from cjm_fasthtml_tailwind.utilities.spacing import p, m
-    from cjm_fasthtml_tailwind.utilities.sizing import container, max_w, w, h
+    from cjm_fasthtml_tailwind.utilities.sizing import container, max_w
     from cjm_fasthtml_tailwind.utilities.typography import font_size, font_weight, text_align
-    from cjm_fasthtml_tailwind.utilities.flexbox_and_grid import grid_display, grid_cols, gap
-    from cjm_fasthtml_tailwind.utilities.borders import rounded, border
     from cjm_fasthtml_tailwind.core.base import combine_classes
 
     from cjm_fasthtml_app_core.components.navbar import create_navbar
@@ -48,21 +46,13 @@ def main():
 
     from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
 
-    from cjm_transcription_source_select.models import SourceSelectUrls
     from cjm_transcription_source_select.routes.core import get_step_state, get_session_id_from_sess
-    from cjm_transcription_source_select.routes.browser import init_browser_router
-    from cjm_transcription_source_select.routes.selection import init_selection_router
-    from cjm_transcription_source_select.routes.preview import init_preview_router
-    from cjm_transcription_source_select.routes.verify import init_verify_router
+    from cjm_transcription_source_select.routes.init import init_source_select_routers
     from cjm_transcription_source_select.services.source_select import SourceSelectService
     from cjm_transcription_source_select.components.file_browser_panel import (
-        create_media_browser_config, get_browser_state, sync_browser_selection,
-        render_browser_panel,
+        create_media_browser_config, get_browser_state,
     )
-    from cjm_transcription_source_select.components.selection_panel import render_selection_panel
-    from cjm_transcription_source_select.components.preview_panel import render_preview_panel
-    from cjm_transcription_source_select.components.stats_panel import render_stats_panel
-    from cjm_transcription_source_select.components.helpers import generate_sortable_init_script
+    from cjm_transcription_source_select.components.step_renderer import render_source_select_step
 
     print("\n" + "=" * 70)
     print("Initializing cjm-transcription-source-select Demo")
@@ -91,7 +81,6 @@ def main():
     workflow_id = "demo-transcription-source-select"
     print(f"  State store: {temp_db}")
 
-    # Create plugin manager with manifest discovery
     plugin_manager = PluginManager()
     plugin_manager.discover_manifests()
     if plugin_manager.discovered:
@@ -102,16 +91,12 @@ def main():
         print(f"  No plugins discovered")
 
     # -------------------------------------------------------------------------
-    # Service layer
+    # Service layer and file system provider
     # -------------------------------------------------------------------------
 
     service = SourceSelectService(plugin_manager)
     service.ensure_loaded()
     print(f"  FFmpeg plugin available: {service.is_available()}")
-
-    # -------------------------------------------------------------------------
-    # File system provider and browser config
-    # -------------------------------------------------------------------------
 
     provider = LocalFileSystemProvider()
     home_path = provider.get_home_path()
@@ -120,62 +105,22 @@ def main():
     print(f"  File browser start: {start_path}")
 
     # -------------------------------------------------------------------------
-    # Initialize routes
+    # Initialize routes via unified assembly
     # -------------------------------------------------------------------------
 
-    urls = SourceSelectUrls()
-
-    browser_router, browser_routes = init_browser_router(
+    routers, urls, routes = init_source_select_routers(
         state_store=state_store,
         provider=provider,
-        config=browser_config,
+        browser_config=browser_config,
         workflow_id=workflow_id,
-        urls=urls,
-        home_path=home_path,
-        prefix="/browser",
-    )
-
-    selection_router, selection_routes = init_selection_router(
-        state_store=state_store,
-        provider=provider,
-        config=browser_config,
-        workflow_id=workflow_id,
-        urls=urls,
-        home_path=home_path,
-        prefix="/selection",
-    )
-
-    preview_router, preview_routes = init_preview_router(
-        state_store=state_store,
-        workflow_id=workflow_id,
-        urls=urls,
-        prefix="/preview",
-    )
-
-    verify_router, verify_routes = init_verify_router(
-        state_store=state_store,
-        workflow_id=workflow_id,
-        urls=urls,
         service=service,
-        prefix="/verify",
+        home_path=home_path,
+        prefix="",
     )
 
-    # Populate URL bundle
-    urls.navigate = browser_routes["navigate"].to()
-    urls.select = browser_routes["select"].to()
-    urls.remove = selection_routes["remove"].to()
-    urls.reorder = selection_routes["reorder"].to()
-    urls.clear = selection_routes["clear"].to()
-    urls.preview = preview_routes["preview"].to()
-    urls.media_src = preview_routes["media_src"].to()
-    urls.verify = verify_routes["verify"].to()
-
-    print(f"  Routes initialized")
-    for name, url in [("navigate", urls.navigate), ("select", urls.select),
-                      ("remove", urls.remove), ("reorder", urls.reorder), ("clear", urls.clear),
-                      ("preview", urls.preview), ("media_src", urls.media_src),
-                      ("verify", urls.verify)]:
-        print(f"    {name}: {url}")
+    print(f"  Routes initialized ({len(routes)} handlers)")
+    for name, route_fn in routes.items():
+        print(f"    {name}: {route_fn.to()}")
 
     # -------------------------------------------------------------------------
     # Page routes
@@ -229,51 +174,21 @@ def main():
             session_id = get_session_id_from_sess(sess)
             step_state = get_step_state(state_store, workflow_id, session_id)
 
-            # Get or create browser state
             browser_state = get_browser_state(step_state, start_path)
-
-            # Sync selection highlights with selected_files
             selected_files = step_state.get("selected_files", [])
             extraction_results = step_state.get("extraction_results", {})
             verified = step_state.get("verified", False)
-            sync_browser_selection(browser_state, selected_files)
 
-            # Render panels
-            browser_panel = render_browser_panel(
-                browser_state=browser_state,
-                config=browser_config,
+            return render_source_select_step(
+                selected_files=selected_files,
+                extraction_results=extraction_results,
+                verified=verified,
+                urls=urls,
                 provider=provider,
-                navigate_url=urls.navigate,
-                select_url=urls.select,
+                browser_config=browser_config,
                 home_path=home_path,
-            )
-
-            selection_panel = render_selection_panel(selected_files, urls, extraction_results)
-            preview_panel = render_preview_panel(media_src_url=urls.media_src)
-            stats_panel = render_stats_panel(selected_files, urls, extraction_results, verified)
-
-            return Div(
-                H1("Source Selection",
-                   cls=combine_classes(font_size._2xl, font_weight.bold, m.b(4))),
-
-                # Two-column layout (browser left, selection right)
-                Div(
-                    Div(browser_panel, cls=w.full),
-                    Div(selection_panel, cls=w.full),
-                    cls=combine_classes(str(grid_display), grid_cols(1), grid_cols(2).lg, gap(4))
-                ),
-
-                # Preview panel (below columns)
-                preview_panel,
-
-                # Stats / verify panel
-                stats_panel,
-
-                # SortableJS library + initialization (must be in body, not head)
-                Script(src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"),
-                Script(generate_sortable_init_script()),
-
-                cls=combine_classes(p(4))
+                browser_state=browser_state,
+                start_path=start_path,
             )
 
         return handle_htmx_request(
@@ -295,7 +210,7 @@ def main():
         theme_selector=True
     )
 
-    register_routes(app, router, browser_router, selection_router, preview_router, verify_router)
+    register_routes(app, router, *routers)
 
     # Debug output
     print("\n" + "=" * 70)

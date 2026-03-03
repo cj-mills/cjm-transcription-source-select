@@ -12,15 +12,17 @@ pip install cjm_transcription_source_select
 ## Project Structure
 
     nbs/
-    ├── components/ (5)
+    ├── components/ (6)
     │   ├── file_browser_panel.ipynb  # File browser panel configuration and rendering for browsing local audio/video files
     │   ├── helpers.ipynb             # Shared helper functions for the transcription source selection step
     │   ├── preview_panel.ipynb       # Collapsible preview panel with audio/video player and file metadata
     │   ├── selection_panel.ipynb     # Selection panel component showing selected files with drag-drop reordering
-    │   └── stats_panel.ipynb         # Stats summary and verify selection button
-    ├── routes/ (5)
+    │   ├── stats_panel.ipynb         # Stats summary and verify selection button
+    │   └── step_renderer.ipynb       # Main step renderer combining all panels for the source selection step
+    ├── routes/ (6)
     │   ├── browser.ipynb    # Route handlers for file browser navigation and file selection
     │   ├── core.ipynb       # State management helpers for the transcription source selection step
+    │   ├── init.ipynb       # Router assembly — creates all sub-routers, populates URL bundle, returns unified interface
     │   ├── preview.ipynb    # Route handlers for media file serving and preview panel rendering
     │   ├── selection.ipynb  # Route handlers for selection queue management (remove, reorder, clear)
     │   └── verify.ipynb     # Route handler for verify selection + audio extraction from video sources
@@ -30,7 +32,7 @@ pip install cjm_transcription_source_select
     ├── models.ipynb    # Data models and URL bundles for the transcription source selection step
     └── utils.ipynb     # Utility functions for file type detection, duration formatting, and extension filtering
 
-Total: 14 notebooks across 3 directories
+Total: 16 notebooks across 3 directories
 
 ## Module Dependencies
 
@@ -41,10 +43,12 @@ graph LR
     components_preview_panel[components.preview_panel<br/>components/preview_panel]
     components_selection_panel[components.selection_panel<br/>components/selection_panel]
     components_stats_panel[components.stats_panel<br/>components/stats_panel]
+    components_step_renderer[components.step_renderer<br/>components/step_renderer]
     html_ids[html_ids<br/>html_ids]
     models[models<br/>models]
     routes_browser[routes.browser<br/>routes/browser]
     routes_core[routes.core<br/>routes/core]
+    routes_init[routes.init<br/>routes/init]
     routes_preview[routes.preview<br/>routes/preview]
     routes_selection[routes.selection<br/>routes/selection]
     routes_verify[routes.verify<br/>routes/verify]
@@ -52,37 +56,50 @@ graph LR
     utils[utils<br/>utils]
 
     components_file_browser_panel --> html_ids
-    components_preview_panel --> models
     components_preview_panel --> utils
+    components_preview_panel --> models
     components_preview_panel --> html_ids
-    components_selection_panel --> models
     components_selection_panel --> utils
+    components_selection_panel --> models
     components_selection_panel --> html_ids
     components_stats_panel --> models
     components_stats_panel --> html_ids
-    routes_browser --> components_file_browser_panel
-    routes_browser --> routes_core
+    components_step_renderer --> components_preview_panel
+    components_step_renderer --> components_file_browser_panel
+    components_step_renderer --> components_stats_panel
+    components_step_renderer --> components_selection_panel
+    components_step_renderer --> components_helpers
+    components_step_renderer --> models
+    components_step_renderer --> html_ids
     routes_browser --> utils
+    routes_browser --> routes_core
+    routes_browser --> components_stats_panel
+    routes_browser --> components_file_browser_panel
     routes_browser --> components_selection_panel
     routes_browser --> models
-    routes_browser --> components_stats_panel
     routes_core --> models
-    routes_preview --> models
+    routes_init --> routes_preview
+    routes_init --> routes_browser
+    routes_init --> models
+    routes_init --> routes_selection
+    routes_init --> routes_verify
+    routes_init --> services_source_select
     routes_preview --> routes_core
     routes_preview --> components_preview_panel
-    routes_selection --> components_file_browser_panel
+    routes_preview --> models
     routes_selection --> routes_core
+    routes_selection --> components_stats_panel
+    routes_selection --> components_file_browser_panel
     routes_selection --> components_selection_panel
     routes_selection --> models
-    routes_selection --> components_stats_panel
-    routes_verify --> components_stats_panel
-    routes_verify --> models
     routes_verify --> routes_core
-    routes_verify --> services_source_select
+    routes_verify --> models
     routes_verify --> components_selection_panel
+    routes_verify --> components_stats_panel
+    routes_verify --> services_source_select
 ```
 
-*29 cross-module dependencies detected*
+*42 cross-module dependencies detected*
 
 ## CLI Reference
 
@@ -318,6 +335,34 @@ class SourceSelectHtmlIds:
             file_path: str  # Absolute path to the video file
         ) -> str:  # HTML ID for the extraction status indicator
         "Generate HTML ID for a video file's extraction status."
+```
+
+### routes/init (`init.ipynb`)
+
+> Router assembly — creates all sub-routers, populates URL bundle,
+> returns unified interface
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.routes.init import (
+    init_source_select_routers
+)
+```
+
+#### Functions
+
+``` python
+def init_source_select_routers(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    provider: LocalFileSystemProvider,  # File system provider
+    browser_config: FileBrowserConfig,  # Browser configuration
+    workflow_id: str,  # Workflow identifier
+    service: SourceSelectService,  # Source select service (FFmpeg plugin)
+    home_path: str = "",  # Home directory for nav buttons
+    prefix: str = "/source_select",  # Base route prefix
+) -> Tuple[List[APIRouter], SourceSelectUrls, Dict[str, Callable]]:  # (routers, urls, routes)
+    "Initialize all source selection routers and populate URL bundle."
 ```
 
 ### models (`models.ipynb`)
@@ -661,6 +706,35 @@ def render_stats_panel(
     verified: bool = False,  # Whether selection is verified
 ) -> Div:  # Stats panel component
     "Render stats summary with verify button."
+```
+
+### components/step_renderer (`step_renderer.ipynb`)
+
+> Main step renderer combining all panels for the source selection step
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.components.step_renderer import (
+    render_source_select_step
+)
+```
+
+#### Functions
+
+``` python
+def render_source_select_step(
+    selected_files: List[SelectedFile],  # Ordered selection
+    extraction_results: Dict[str, ExtractionResult],  # video_path -> result
+    verified: bool,  # Whether selection is verified
+    urls: SourceSelectUrls,  # URL bundle
+    provider: LocalFileSystemProvider,  # File system provider
+    browser_config: FileBrowserConfig,  # Browser configuration
+    home_path: str,  # Home directory path
+    browser_state: Optional[BrowserState] = None,  # Browser state (created if None)
+    start_path: str = "",  # Starting directory (used if no browser_state)
+) -> Div:  # Complete step view
+    "Render the complete source selection step."
 ```
 
 ### utils (`utils.ipynb`)
