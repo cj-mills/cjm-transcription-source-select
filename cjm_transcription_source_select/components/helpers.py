@@ -5,7 +5,7 @@
 # %% auto #0
 __all__ = ['generate_sortable_init_script']
 
-# %% ../../nbs/components/helpers.ipynb #4bd753d2
+# %% ../../nbs/components/helpers.ipynb #8acbbdb4
 def generate_sortable_init_script(
     container_selector: str = ".sortable",  # CSS selector for sortable containers
     handle_selector: str = ".drag-handle",  # CSS selector for drag handles

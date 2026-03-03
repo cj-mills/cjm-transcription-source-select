@@ -5,7 +5,7 @@
 # %% auto #0
 __all__ = ['render_queue_item', 'render_selection_panel']
 
-# %% ../../nbs/components/selection_panel.ipynb #4d50c648
+# %% ../../nbs/components/selection_panel.ipynb #2d5cdc98
 from typing import Any, Dict, List
 import json
 
@@ -36,7 +36,7 @@ from ..models import SourceSelectUrls, SelectedFile
 from ..html_ids import SourceSelectHtmlIds
 from ..utils import format_file_size, format_duration
 
-# %% ../../nbs/components/selection_panel.ipynb #1d5eee16
+# %% ../../nbs/components/selection_panel.ipynb #60e93eb0
 def _render_type_badge(
     file_type: str,  # "audio" or "video"
 ) -> Span:  # Badge component
@@ -45,7 +45,7 @@ def _render_type_badge(
         return Span("video", cls=combine_classes(badge, badge_styles.ghost, badge_sizes.sm, text_dui.secondary))
     return Span("audio", cls=combine_classes(badge, badge_styles.ghost, badge_sizes.sm, text_dui.info))
 
-# %% ../../nbs/components/selection_panel.ipynb #7cde6932
+# %% ../../nbs/components/selection_panel.ipynb #1b359fc0
 def render_queue_item(
     selected_file: SelectedFile,  # Selected file data
     index: int,  # Position in queue (1-based)
@@ -106,7 +106,7 @@ def render_queue_item(
         data_path=path
     )
 
-# %% ../../nbs/components/selection_panel.ipynb #8ddb0407
+# %% ../../nbs/components/selection_panel.ipynb #d8e46ede
 def render_selection_panel(
     selected_files: List[SelectedFile],  # Ordered list of selected files
     urls: SourceSelectUrls,  # URL bundle

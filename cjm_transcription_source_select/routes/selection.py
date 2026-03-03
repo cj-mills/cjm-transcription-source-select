@@ -5,7 +5,7 @@
 # %% auto #0
 __all__ = ['init_selection_router']
 
-# %% ../../nbs/routes/selection.ipynb #d87e7a01
+# %% ../../nbs/routes/selection.ipynb #d9134d0d
 from typing import Dict, Tuple, Callable
 from pathlib import Path
 
@@ -24,7 +24,7 @@ from cjm_transcription_source_select.components.file_browser_panel import (
     get_browser_state, sync_browser_selection, render_browser_panel
 )
 
-# %% ../../nbs/routes/selection.ipynb #cf29cae0
+# %% ../../nbs/routes/selection.ipynb #6faf1f42
 def _render_oob_browser(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
     provider: LocalFileSystemProvider,  # File system provider
@@ -57,7 +57,7 @@ def _render_oob_browser(
     browser.attrs["hx-swap-oob"] = "outerHTML"
     return browser
 
-# %% ../../nbs/routes/selection.ipynb #6da13ecf
+# %% ../../nbs/routes/selection.ipynb #66ceacad
 def _handle_remove(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
     provider: LocalFileSystemProvider,  # File system provider
@@ -88,7 +88,7 @@ def _handle_remove(
     )
     return selection, browser_oob
 
-# %% ../../nbs/routes/selection.ipynb #43297b6a
+# %% ../../nbs/routes/selection.ipynb #35033565
 async def _handle_reorder(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
     workflow_id: str,  # Workflow identifier
@@ -122,7 +122,7 @@ async def _handle_reorder(
 
     return render_selection_panel(reordered, urls)
 
-# %% ../../nbs/routes/selection.ipynb #1bc16d66
+# %% ../../nbs/routes/selection.ipynb #0f839f65
 def _handle_clear(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
     provider: LocalFileSystemProvider,  # File system provider
@@ -148,7 +148,7 @@ def _handle_clear(
     )
     return selection, browser_oob
 
-# %% ../../nbs/routes/selection.ipynb #94319aac
+# %% ../../nbs/routes/selection.ipynb #9d362de7
 def init_selection_router(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
     provider: LocalFileSystemProvider,  # File system provider (for OOB browser updates)
