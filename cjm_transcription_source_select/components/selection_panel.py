@@ -216,11 +216,13 @@ def render_selection_panel(
     )
 
     # Queue list with SortableJS
+    # hx_include="this" required for HTMX 2.x to collect child hidden inputs
     queue_list = Ul(
         *queue_items,
         id=SourceSelectHtmlIds.SELECTION_LIST,
         hx_post=urls.reorder,
         hx_trigger="end",
+        hx_include="this",
         hx_target=SourceSelectHtmlIds.as_selector(SourceSelectHtmlIds.SELECTION_PANEL),
         hx_swap="outerHTML",
         cls=combine_classes("sortable", grow(), overflow.y.auto, list_style.none, m(0), p(0))
