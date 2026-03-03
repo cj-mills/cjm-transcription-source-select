@@ -23,6 +23,7 @@ from cjm_transcription_source_select.routes.core import (
 from cjm_transcription_source_select.components.file_browser_panel import (
     get_browser_state, sync_browser_selection, render_browser_panel
 )
+from ..components.selection_panel import render_selection_panel
 
 # %% ../../nbs/routes/browser.ipynb #9d4cc280
 def _handle_navigate(
@@ -77,7 +78,7 @@ def _handle_select(
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
     path: str,  # File path to toggle
-):  # Rendered browser panel
+):  # (browser panel, OOB selection panel)
     """Toggle a file in/out of the selected files list."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
@@ -113,7 +114,8 @@ def _handle_select(
         browser_state=browser_state.to_dict(),
     )
 
-    return render_browser_panel(
+    # Primary swap: browser panel
+    browser = render_browser_panel(
         browser_state=browser_state,
         config=config,
         provider=provider,
@@ -121,6 +123,12 @@ def _handle_select(
         select_url=urls.select,
         home_path=home_path,
     )
+
+    # OOB swap: selection panel (use hyphenated key for correct HTML attribute)
+    selection = render_selection_panel(selected_files, urls)
+    selection.attrs["hx-swap-oob"] = "outerHTML"
+
+    return browser, selection
 
 # %% ../../nbs/routes/browser.ipynb #9220ffe5
 def init_browser_router(

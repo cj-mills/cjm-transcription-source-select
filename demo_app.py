@@ -23,7 +23,7 @@ DEMO_MEDIA_DIR = str(Path.home() / "Music")  # Default starting directory
 
 def main():
     """Initialize source selection demo and start the server."""
-    from fasthtml.common import fast_app, Div, H1, H2, P, Span, A, APIRouter
+    from fasthtml.common import fast_app, Div, H1, H2, P, Span, A, Script, APIRouter
 
     from cjm_fasthtml_daisyui.core.resources import get_daisyui_headers
     from cjm_fasthtml_daisyui.core.testing import create_theme_persistence_script
@@ -51,10 +51,13 @@ def main():
     from cjm_transcription_source_select.models import SourceSelectUrls
     from cjm_transcription_source_select.routes.core import get_step_state, get_session_id_from_sess
     from cjm_transcription_source_select.routes.browser import init_browser_router
+    from cjm_transcription_source_select.routes.selection import init_selection_router
     from cjm_transcription_source_select.components.file_browser_panel import (
         create_media_browser_config, get_browser_state, sync_browser_selection,
         render_browser_panel,
     )
+    from cjm_transcription_source_select.components.selection_panel import render_selection_panel
+    from cjm_transcription_source_select.components.helpers import generate_sortable_init_script
 
     print("\n" + "=" * 70)
     print("Initializing cjm-transcription-source-select Demo")
@@ -104,7 +107,7 @@ def main():
     print(f"  File browser start: {start_path}")
 
     # -------------------------------------------------------------------------
-    # Initialize browser routes
+    # Initialize routes
     # -------------------------------------------------------------------------
 
     urls = SourceSelectUrls()
@@ -119,13 +122,27 @@ def main():
         prefix="/browser",
     )
 
+    selection_router, selection_routes = init_selection_router(
+        state_store=state_store,
+        provider=provider,
+        config=browser_config,
+        workflow_id=workflow_id,
+        urls=urls,
+        home_path=home_path,
+        prefix="/selection",
+    )
+
     # Populate URL bundle
     urls.navigate = browser_routes["navigate"].to()
     urls.select = browser_routes["select"].to()
+    urls.remove = selection_routes["remove"].to()
+    urls.reorder = selection_routes["reorder"].to()
+    urls.clear = selection_routes["clear"].to()
 
-    print(f"  Browser routes initialized")
-    print(f"    navigate: {urls.navigate}")
-    print(f"    select: {urls.select}")
+    print(f"  Routes initialized")
+    for name, url in [("navigate", urls.navigate), ("select", urls.select),
+                      ("remove", urls.remove), ("reorder", urls.reorder), ("clear", urls.clear)]:
+        print(f"    {name}: {url}")
 
     # -------------------------------------------------------------------------
     # Page routes
@@ -186,7 +203,7 @@ def main():
             selected_files = step_state.get("selected_files", [])
             sync_browser_selection(browser_state, selected_files)
 
-            # Render the file browser panel
+            # Render panels
             browser_panel = render_browser_panel(
                 browser_state=browser_state,
                 config=browser_config,
@@ -196,32 +213,23 @@ def main():
                 home_path=home_path,
             )
 
-            # Selection summary
-            file_count = len(selected_files)
-            summary = f"{file_count} file{'s' if file_count != 1 else ''} selected"
+            selection_panel = render_selection_panel(selected_files, urls)
 
             return Div(
                 H1("Source Selection",
                    cls=combine_classes(font_size._2xl, font_weight.bold, m.b(4))),
 
-                # Two-column layout (browser left, selection summary right)
+                # Two-column layout (browser left, selection right)
                 Div(
-                    # Left column: file browser
                     Div(browser_panel, cls=w.full),
-
-                    # Right column: selection panel (placeholder for Phase 3)
-                    Div(
-                        P(summary,
-                          cls=combine_classes(font_size.lg, font_weight.bold, m.b(4))),
-                        *[P(f["filename"], cls=combine_classes(font_size.sm, m.b(1)))
-                          for f in selected_files],
-                        P("Full selection panel will be built in Phase 3.",
-                          cls=combine_classes(font_size.sm, text_dui.base_content, m.t(4))),
-                        cls=combine_classes(w.full, border(), border_dui.base_300, rounded.lg, p(4))
-                    ),
-
+                    Div(selection_panel, cls=w.full),
                     cls=combine_classes(str(grid_display), grid_cols(1), grid_cols(2).lg, gap(4))
                 ),
+
+                # SortableJS library + initialization (must be in body, not head)
+                Script(src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"),
+                Script(generate_sortable_init_script()),
+
                 cls=combine_classes(p(4))
             )
 
@@ -244,7 +252,7 @@ def main():
         theme_selector=True
     )
 
-    register_routes(app, router, browser_router)
+    register_routes(app, router, browser_router, selection_router)
 
     # Debug output
     print("\n" + "=" * 70)

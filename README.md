@@ -12,37 +12,51 @@ pip install cjm_transcription_source_select
 ## Project Structure
 
     nbs/
-    ├── components/ (1)
-    │   └── file_browser_panel.ipynb  # File browser panel configuration and rendering for browsing local audio/video files
-    ├── routes/ (2)
-    │   ├── browser.ipynb  # Route handlers for file browser navigation and file selection
-    │   └── core.ipynb     # State management helpers for the transcription source selection step
+    ├── components/ (3)
+    │   ├── file_browser_panel.ipynb  # File browser panel configuration and rendering for browsing local audio/video files
+    │   ├── helpers.ipynb             # Shared helper functions for the transcription source selection step
+    │   └── selection_panel.ipynb     # Selection panel component showing selected files with drag-drop reordering
+    ├── routes/ (3)
+    │   ├── browser.ipynb    # Route handlers for file browser navigation and file selection
+    │   ├── core.ipynb       # State management helpers for the transcription source selection step
+    │   └── selection.ipynb  # Route handlers for selection queue management (remove, reorder, clear)
     ├── html_ids.ipynb  # HTML ID constants for the transcription source selection step
     ├── models.ipynb    # Data models and URL bundles for the transcription source selection step
     └── utils.ipynb     # Utility functions for file type detection, duration formatting, and extension filtering
 
-Total: 6 notebooks across 3 directories
+Total: 9 notebooks across 3 directories
 
 ## Module Dependencies
 
 ``` mermaid
 graph LR
     components_file_browser_panel[components.file_browser_panel<br/>components/file_browser_panel]
+    components_helpers[components.helpers<br/>components/helpers]
+    components_selection_panel[components.selection_panel<br/>components/selection_panel]
     html_ids[html_ids<br/>html_ids]
     models[models<br/>models]
     routes_browser[routes.browser<br/>routes/browser]
     routes_core[routes.core<br/>routes/core]
+    routes_selection[routes.selection<br/>routes/selection]
     utils[utils<br/>utils]
 
     components_file_browser_panel --> html_ids
+    components_selection_panel --> models
+    components_selection_panel --> utils
+    components_selection_panel --> html_ids
+    routes_browser --> models
+    routes_browser --> components_selection_panel
     routes_browser --> routes_core
     routes_browser --> components_file_browser_panel
-    routes_browser --> models
     routes_browser --> utils
     routes_core --> models
+    routes_selection --> components_file_browser_panel
+    routes_selection --> models
+    routes_selection --> routes_core
+    routes_selection --> components_selection_panel
 ```
 
-*6 cross-module dependencies detected*
+*14 cross-module dependencies detected*
 
 ## CLI Reference
 
@@ -90,7 +104,7 @@ def _handle_select(
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
     path: str,  # File path to toggle
-):  # Rendered browser panel
+):  # (browser panel, OOB selection panel)
     "Toggle a file in/out of the selected files list."
 ```
 
@@ -218,6 +232,29 @@ VIDEO_FILTER_EXTENSIONS = [7 items]
 MEDIA_FILTER_EXTENSIONS
 ```
 
+### components/helpers (`helpers.ipynb`)
+
+> Shared helper functions for the transcription source selection step
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.components.helpers import (
+    generate_sortable_init_script
+)
+```
+
+#### Functions
+
+``` python
+def generate_sortable_init_script(
+    container_selector: str = ".sortable",  # CSS selector for sortable containers
+    handle_selector: str = ".drag-handle",  # CSS selector for drag handles
+    animation_ms: int = 150,  # Animation duration in milliseconds
+) -> str:  # JavaScript initialization script
+    "Generate Sortable.js initialization script for htmx integration."
+```
+
 ### html_ids (`html_ids.ipynb`)
 
 > HTML ID constants for the transcription source selection step
@@ -303,6 +340,125 @@ class SourceSelectUrls:
     preview: str = ''  # Preview a file (render player)
     verify: str = ''  # Verify selection + trigger extraction
     extraction_status: str = ''  # Poll extraction status
+```
+
+### routes/selection (`selection.ipynb`)
+
+> Route handlers for selection queue management (remove, reorder, clear)
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.routes.selection import (
+    init_selection_router
+)
+```
+
+#### Functions
+
+``` python
+def _render_oob_browser(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    provider: LocalFileSystemProvider,  # File system provider
+    config: FileBrowserConfig,  # Browser configuration
+    workflow_id: str,  # Workflow identifier
+    home_path: str,  # Home directory path
+    urls: SourceSelectUrls,  # URL bundle
+    session_id: str,  # Session identifier
+    selected_files: list,  # Current selected files
+):  # Browser panel with OOB attribute set
+    "Render browser panel as OOB swap to update selection highlights."
+```
+
+``` python
+def _handle_remove(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    provider: LocalFileSystemProvider,  # File system provider
+    config: FileBrowserConfig,  # Browser configuration
+    workflow_id: str,  # Workflow identifier
+    home_path: str,  # Home directory path
+    urls: SourceSelectUrls,  # URL bundle
+    sess,  # FastHTML session
+    path: str,  # File path to remove
+):  # (selection panel, OOB browser panel)
+    "Remove a file from the selection."
+```
+
+``` python
+async def _handle_reorder(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    workflow_id: str,  # Workflow identifier
+    urls: SourceSelectUrls,  # URL bundle
+    request,  # FastHTML request
+    sess,  # FastHTML session
+):  # Rendered selection panel
+    "Reorder selected files based on SortableJS drag result."
+```
+
+``` python
+def _handle_clear(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    provider: LocalFileSystemProvider,  # File system provider
+    config: FileBrowserConfig,  # Browser configuration
+    workflow_id: str,  # Workflow identifier
+    home_path: str,  # Home directory path
+    urls: SourceSelectUrls,  # URL bundle
+    sess,  # FastHTML session
+):  # (selection panel, OOB browser panel)
+    "Clear all selected files."
+```
+
+``` python
+def init_selection_router(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    provider: LocalFileSystemProvider,  # File system provider (for OOB browser updates)
+    config: FileBrowserConfig,  # Browser configuration (for OOB browser updates)
+    workflow_id: str,  # Workflow identifier
+    urls: SourceSelectUrls,  # Mutable URL bundle
+    home_path: str = "",  # Home directory path
+    prefix: str = "/selection",  # Route prefix
+) -> Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)
+    "Initialize selection queue management routes."
+```
+
+### components/selection_panel (`selection_panel.ipynb`)
+
+> Selection panel component showing selected files with drag-drop
+> reordering
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.components.selection_panel import (
+    render_queue_item,
+    render_selection_panel
+)
+```
+
+#### Functions
+
+``` python
+def _render_type_badge(
+    file_type: str,  # "audio" or "video"
+) -> Span:  # Badge component
+    "Render a type badge for a selected file."
+```
+
+``` python
+def render_queue_item(
+    selected_file: SelectedFile,  # Selected file data
+    index: int,  # Position in queue (1-based)
+    urls: SourceSelectUrls,  # URL bundle
+) -> Li:  # Queue item element
+    "Render a single item in the selection queue."
+```
+
+``` python
+def render_selection_panel(
+    selected_files: List[SelectedFile],  # Ordered list of selected files
+    urls: SourceSelectUrls,  # URL bundle
+) -> Div:  # Selection panel component
+    "Render the selection panel with drag-drop reordering."
 ```
 
 ### utils (`utils.ipynb`)
