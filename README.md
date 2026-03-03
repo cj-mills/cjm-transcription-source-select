@@ -12,19 +12,21 @@ pip install cjm_transcription_source_select
 ## Project Structure
 
     nbs/
-    ├── components/ (3)
+    ├── components/ (4)
     │   ├── file_browser_panel.ipynb  # File browser panel configuration and rendering for browsing local audio/video files
     │   ├── helpers.ipynb             # Shared helper functions for the transcription source selection step
+    │   ├── preview_panel.ipynb       # Collapsible preview panel with audio/video player and file metadata
     │   └── selection_panel.ipynb     # Selection panel component showing selected files with drag-drop reordering
-    ├── routes/ (3)
+    ├── routes/ (4)
     │   ├── browser.ipynb    # Route handlers for file browser navigation and file selection
     │   ├── core.ipynb       # State management helpers for the transcription source selection step
+    │   ├── preview.ipynb    # Route handlers for media file serving and preview panel rendering
     │   └── selection.ipynb  # Route handlers for selection queue management (remove, reorder, clear)
     ├── html_ids.ipynb  # HTML ID constants for the transcription source selection step
     ├── models.ipynb    # Data models and URL bundles for the transcription source selection step
     └── utils.ipynb     # Utility functions for file type detection, duration formatting, and extension filtering
 
-Total: 9 notebooks across 3 directories
+Total: 11 notebooks across 3 directories
 
 ## Module Dependencies
 
@@ -32,31 +34,39 @@ Total: 9 notebooks across 3 directories
 graph LR
     components_file_browser_panel[components.file_browser_panel<br/>components/file_browser_panel]
     components_helpers[components.helpers<br/>components/helpers]
+    components_preview_panel[components.preview_panel<br/>components/preview_panel]
     components_selection_panel[components.selection_panel<br/>components/selection_panel]
     html_ids[html_ids<br/>html_ids]
     models[models<br/>models]
     routes_browser[routes.browser<br/>routes/browser]
     routes_core[routes.core<br/>routes/core]
+    routes_preview[routes.preview<br/>routes/preview]
     routes_selection[routes.selection<br/>routes/selection]
     utils[utils<br/>utils]
 
     components_file_browser_panel --> html_ids
+    components_preview_panel --> html_ids
+    components_preview_panel --> utils
+    components_preview_panel --> models
     components_selection_panel --> models
-    components_selection_panel --> utils
     components_selection_panel --> html_ids
+    components_selection_panel --> utils
     routes_browser --> models
-    routes_browser --> components_selection_panel
-    routes_browser --> routes_core
-    routes_browser --> components_file_browser_panel
     routes_browser --> utils
+    routes_browser --> components_file_browser_panel
+    routes_browser --> routes_core
+    routes_browser --> components_selection_panel
     routes_core --> models
+    routes_preview --> models
+    routes_preview --> routes_core
+    routes_preview --> components_preview_panel
     routes_selection --> components_file_browser_panel
     routes_selection --> models
     routes_selection --> routes_core
     routes_selection --> components_selection_panel
 ```
 
-*14 cross-module dependencies detected*
+*20 cross-module dependencies detected*
 
 ## CLI Reference
 
@@ -338,8 +348,89 @@ class SourceSelectUrls:
     reorder: str = ''  # Reorder selection (SortableJS)
     clear: str = ''  # Clear all selected files
     preview: str = ''  # Preview a file (render player)
+    media_src: str = ''  # Serve a local media file for HTML5 players
     verify: str = ''  # Verify selection + trigger extraction
     extraction_status: str = ''  # Poll extraction status
+```
+
+### routes/preview (`preview.ipynb`)
+
+> Route handlers for media file serving and preview panel rendering
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.routes.preview import (
+    init_preview_router
+)
+```
+
+#### Functions
+
+``` python
+def _handle_media_src(
+    path: str,  # Absolute path to the media file
+) -> Response:  # FileResponse or 404
+    "Serve a local media file with appropriate MIME type."
+```
+
+``` python
+def _handle_preview(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    workflow_id: str,  # Workflow identifier
+    urls: SourceSelectUrls,  # URL bundle
+    sess,  # FastHTML session
+    path: str,  # File path to preview
+):  # Rendered preview panel
+    "Render the preview panel for a selected file."
+```
+
+``` python
+def init_preview_router(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    workflow_id: str,  # Workflow identifier
+    urls: SourceSelectUrls,  # Mutable URL bundle
+    prefix: str = "/preview",  # Route prefix
+) -> Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)
+    "Initialize preview routes for media serving and preview panel rendering."
+```
+
+### components/preview_panel (`preview_panel.ipynb`)
+
+> Collapsible preview panel with audio/video player and file metadata
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.components.preview_panel import (
+    render_preview_panel
+)
+```
+
+#### Functions
+
+``` python
+def _render_metadata_row(
+    label: str,  # Label text
+    value: str,  # Value text
+) -> Div:  # Metadata row element
+    "Render a single metadata label-value pair."
+```
+
+``` python
+def _render_file_metadata(
+    selected_file: SelectedFile,  # File to display metadata for
+) -> Div:  # Metadata section
+    "Render file metadata section."
+```
+
+``` python
+def render_preview_panel(
+    selected_file: Optional[SelectedFile] = None,  # File to preview (None for empty state)
+    media_src_url: str = "",  # Base URL for media file serving
+    is_open: bool = False,  # Whether panel starts open
+) -> Div:  # Preview panel component
+    "Render a collapsible preview panel with audio/video player."
 ```
 
 ### routes/selection (`selection.ipynb`)

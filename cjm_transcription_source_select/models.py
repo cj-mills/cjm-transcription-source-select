@@ -57,6 +57,7 @@ class SourceSelectUrls:
 
     # Preview (Phase 4)
     preview: str = ""  # Preview a file (render player)
+    media_src: str = ""  # Serve a local media file for HTML5 players
 
     # Verify (Phase 5)
     verify: str = ""  # Verify selection + trigger extraction

@@ -52,11 +52,13 @@ def main():
     from cjm_transcription_source_select.routes.core import get_step_state, get_session_id_from_sess
     from cjm_transcription_source_select.routes.browser import init_browser_router
     from cjm_transcription_source_select.routes.selection import init_selection_router
+    from cjm_transcription_source_select.routes.preview import init_preview_router
     from cjm_transcription_source_select.components.file_browser_panel import (
         create_media_browser_config, get_browser_state, sync_browser_selection,
         render_browser_panel,
     )
     from cjm_transcription_source_select.components.selection_panel import render_selection_panel
+    from cjm_transcription_source_select.components.preview_panel import render_preview_panel
     from cjm_transcription_source_select.components.helpers import generate_sortable_init_script
 
     print("\n" + "=" * 70)
@@ -132,16 +134,26 @@ def main():
         prefix="/selection",
     )
 
+    preview_router, preview_routes = init_preview_router(
+        state_store=state_store,
+        workflow_id=workflow_id,
+        urls=urls,
+        prefix="/preview",
+    )
+
     # Populate URL bundle
     urls.navigate = browser_routes["navigate"].to()
     urls.select = browser_routes["select"].to()
     urls.remove = selection_routes["remove"].to()
     urls.reorder = selection_routes["reorder"].to()
     urls.clear = selection_routes["clear"].to()
+    urls.preview = preview_routes["preview"].to()
+    urls.media_src = preview_routes["media_src"].to()
 
     print(f"  Routes initialized")
     for name, url in [("navigate", urls.navigate), ("select", urls.select),
-                      ("remove", urls.remove), ("reorder", urls.reorder), ("clear", urls.clear)]:
+                      ("remove", urls.remove), ("reorder", urls.reorder), ("clear", urls.clear),
+                      ("preview", urls.preview), ("media_src", urls.media_src)]:
         print(f"    {name}: {url}")
 
     # -------------------------------------------------------------------------
@@ -214,6 +226,7 @@ def main():
             )
 
             selection_panel = render_selection_panel(selected_files, urls)
+            preview_panel = render_preview_panel(media_src_url=urls.media_src)
 
             return Div(
                 H1("Source Selection",
@@ -225,6 +238,9 @@ def main():
                     Div(selection_panel, cls=w.full),
                     cls=combine_classes(str(grid_display), grid_cols(1), grid_cols(2).lg, gap(4))
                 ),
+
+                # Preview panel (below columns)
+                preview_panel,
 
                 # SortableJS library + initialization (must be in body, not head)
                 Script(src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"),
@@ -252,7 +268,7 @@ def main():
         theme_selector=True
     )
 
-    register_routes(app, router, browser_router, selection_router)
+    register_routes(app, router, browser_router, selection_router, preview_router)
 
     # Debug output
     print("\n" + "=" * 70)

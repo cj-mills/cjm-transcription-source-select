@@ -85,6 +85,17 @@ def render_queue_item(
             cls=combine_classes(font_size.xs, text_dui.base_content.opacity(60), m.l(2))
         ),
 
+        # Preview button
+        Button(
+            lucide_icon("eye", size=4, cls=str(text_dui.base_content.opacity(60))),
+            cls=combine_classes(btn, btn_styles.ghost, btn_sizes.xs, m.l(1)),
+            hx_post=urls.preview,
+            hx_vals=json.dumps({"path": path}),
+            hx_target=SourceSelectHtmlIds.as_selector(SourceSelectHtmlIds.PREVIEW_PANEL),
+            hx_swap="outerHTML",
+            title="Preview file"
+        ),
+
         # Remove button
         Button(
             lucide_icon("x", size=4, cls=str(text_dui.base_content.opacity(60))),
