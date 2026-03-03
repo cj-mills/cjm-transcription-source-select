@@ -26,10 +26,10 @@ MEDIA_FILTER_EXTENSIONS = AUDIO_FILTER_EXTENSIONS + VIDEO_FILTER_EXTENSIONS
 
 # %% ../../nbs/components/file_browser_panel.ipynb #64d5b631
 def create_media_browser_config() -> FileBrowserConfig:  # Configured for audio/video file selection
-    """Create file browser config for audio/video file selection."""
+    """Create file browser config for audio/video file selection with folder bulk-select."""
     return FileBrowserConfig(
         selection_mode=SelectionMode.MULTIPLE,
-        selectable_types="files",
+        selectable_types="both",
         view=ViewConfig(
             default_mode=ViewMode.LIST,
             allow_mode_toggle=False,
@@ -39,11 +39,11 @@ def create_media_browser_config() -> FileBrowserConfig:  # Configured for audio/
         filter=FilterConfig(
             allowed_extensions=MEDIA_FILTER_EXTENSIONS,
             show_directories=True,
-            show_hidden=False,
+            show_hidden=True,
         ),
         show_path_bar=True,
-        show_breadcrumbs=True,
-        show_toolbar=False,
+        show_path_input=True,
+        show_toolbar=True,
         show_parent_navigation=True,
         container_id=SourceSelectHtmlIds.BROWSER_PANEL,
         content_id=SourceSelectHtmlIds.BROWSER_FILE_LIST,
@@ -64,9 +64,13 @@ def get_browser_state(
 def sync_browser_selection(
     browser_state: BrowserState,  # Browser state to update
     selected_files: List[Dict[str, Any]],  # Current selected_files from step state
+    selected_folders: Optional[List[str]] = None,  # Folder paths toggled for bulk select
 ) -> None:  # Modifies browser_state in place
-    """Sync browser selection state with the selected_files list."""
-    browser_state.selection.selected_paths = [f["path"] for f in selected_files]
+    """Sync browser selection state with selected files and folders."""
+    paths = [f["path"] for f in selected_files]
+    if selected_folders:
+        paths.extend(selected_folders)
+    browser_state.selection.selected_paths = paths
 
 # %% ../../nbs/components/file_browser_panel.ipynb #59b341a9
 def render_browser_panel(

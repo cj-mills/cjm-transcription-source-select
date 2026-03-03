@@ -64,37 +64,37 @@ graph LR
     components_selection_panel --> html_ids
     components_stats_panel --> models
     components_stats_panel --> html_ids
-    components_step_renderer --> components_preview_panel
     components_step_renderer --> components_file_browser_panel
-    components_step_renderer --> components_stats_panel
-    components_step_renderer --> components_selection_panel
-    components_step_renderer --> components_helpers
     components_step_renderer --> models
+    components_step_renderer --> components_selection_panel
+    components_step_renderer --> components_stats_panel
+    components_step_renderer --> components_preview_panel
     components_step_renderer --> html_ids
-    routes_browser --> utils
-    routes_browser --> routes_core
-    routes_browser --> components_stats_panel
+    components_step_renderer --> components_helpers
     routes_browser --> components_file_browser_panel
-    routes_browser --> components_selection_panel
+    routes_browser --> routes_core
+    routes_browser --> utils
     routes_browser --> models
+    routes_browser --> components_selection_panel
+    routes_browser --> components_stats_panel
     routes_core --> models
     routes_init --> routes_preview
-    routes_init --> routes_browser
-    routes_init --> models
     routes_init --> routes_selection
-    routes_init --> routes_verify
+    routes_init --> routes_browser
     routes_init --> services_source_select
+    routes_init --> routes_verify
+    routes_init --> models
     routes_preview --> routes_core
     routes_preview --> components_preview_panel
     routes_preview --> models
-    routes_selection --> routes_core
-    routes_selection --> components_stats_panel
     routes_selection --> components_file_browser_panel
+    routes_selection --> routes_core
     routes_selection --> components_selection_panel
+    routes_selection --> components_stats_panel
     routes_selection --> models
-    routes_verify --> routes_core
     routes_verify --> models
     routes_verify --> components_selection_panel
+    routes_verify --> routes_core
     routes_verify --> components_stats_panel
     routes_verify --> services_source_select
 ```
@@ -138,6 +138,13 @@ def _handle_navigate(
 ```
 
 ``` python
+def _list_media_in_folder(
+    folder_path: str,  # Directory to scan for media files
+) -> List[SelectedFile]:  # Media files found as SelectedFile dicts
+    "List media files in a directory (shallow, no recursion)."
+```
+
+``` python
 def _handle_select(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
     provider: LocalFileSystemProvider,  # File system provider
@@ -146,9 +153,9 @@ def _handle_select(
     home_path: str,  # Home directory path
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
-    path: str,  # File path to toggle
+    path: str,  # File or folder path to toggle
 ):  # (browser panel, OOB selection panel, OOB stats panel)
-    "Toggle a file in/out of the selected files list."
+    "Toggle a file or folder in/out of the selected files list."
 ```
 
 ``` python
@@ -236,7 +243,7 @@ from cjm_transcription_source_select.components.file_browser_panel import (
 
 ``` python
 def create_media_browser_config() -> FileBrowserConfig:  # Configured for audio/video file selection
-    "Create file browser config for audio/video file selection."
+    "Create file browser config for audio/video file selection with folder bulk-select."
 ```
 
 ``` python
@@ -251,8 +258,9 @@ def get_browser_state(
 def sync_browser_selection(
     browser_state: BrowserState,  # Browser state to update
     selected_files: List[Dict[str, Any]],  # Current selected_files from step state
+    selected_folders: Optional[List[str]] = None,  # Folder paths toggled for bulk select
 ) -> None:  # Modifies browser_state in place
-    "Sync browser selection state with the selected_files list."
+    "Sync browser selection state with selected files and folders."
 ```
 
 ``` python
@@ -518,6 +526,7 @@ def _render_oob_browser(
     urls: SourceSelectUrls,  # URL bundle
     session_id: str,  # Session identifier
     selected_files: list,  # Current selected files
+    selected_folders: list = None,  # Current selected folders
 ):  # Browser panel with OOB attribute set
     "Render browser panel as OOB swap to update selection highlights."
 ```
@@ -557,7 +566,7 @@ def _handle_clear(
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
 ):  # (selection panel, OOB browser panel, OOB stats panel)
-    "Clear all selected files."
+    "Clear all selected files and folders."
 ```
 
 ``` python

@@ -35,11 +35,12 @@ def _render_oob_browser(
     urls: SourceSelectUrls,  # URL bundle
     session_id: str,  # Session identifier
     selected_files: list,  # Current selected files
+    selected_folders: list = None,  # Current selected folders
 ):  # Browser panel with OOB attribute set
     """Render browser panel as OOB swap to update selection highlights."""
     step_state = get_step_state(state_store, workflow_id, session_id)
     browser_state = get_browser_state(step_state, home_path)
-    sync_browser_selection(browser_state, selected_files)
+    sync_browser_selection(browser_state, selected_files, selected_folders)
 
     # Save updated browser state
     update_step_state(
@@ -73,8 +74,17 @@ def _handle_remove(
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
     selected_files = step_state.get("selected_files", [])
+    selected_folders = step_state.get("selected_folders", [])
 
     selected_files = [f for f in selected_files if f["path"] != path]
+
+    # Auto-deselect parent folder if no files from it remain
+    parent = str(Path(path).parent)
+    if parent in selected_folders:
+        remaining = {f["path"] for f in selected_files}
+        has_sibling = any(str(Path(p).parent) == parent for p in remaining)
+        if not has_sibling:
+            selected_folders = [f for f in selected_folders if f != parent]
 
     # Clean up extraction result for the removed file
     extraction_results = step_state.get("extraction_results", {})
@@ -83,6 +93,7 @@ def _handle_remove(
     update_step_state(
         state_store, workflow_id, session_id,
         selected_files=selected_files,
+        selected_folders=selected_folders,
         extraction_results=extraction_results,
         verified=False,
         committed_audio_paths=[],
@@ -90,7 +101,8 @@ def _handle_remove(
 
     selection = render_selection_panel(selected_files, urls, extraction_results)
     browser_oob = _render_oob_browser(
-        state_store, provider, config, workflow_id, home_path, urls, session_id, selected_files
+        state_store, provider, config, workflow_id, home_path, urls,
+        session_id, selected_files, selected_folders
     )
     stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
     stats_oob.attrs["hx-swap-oob"] = "outerHTML"
@@ -140,12 +152,13 @@ def _handle_clear(
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
 ):  # (selection panel, OOB browser panel, OOB stats panel)
-    """Clear all selected files."""
+    """Clear all selected files and folders."""
     session_id = get_session_id_from_sess(sess)
 
     update_step_state(
         state_store, workflow_id, session_id,
         selected_files=[],
+        selected_folders=[],
         extraction_results={},
         verified=False,
         committed_audio_paths=[],

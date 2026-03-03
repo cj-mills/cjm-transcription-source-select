@@ -35,6 +35,7 @@ class SourceSelectState(TypedDict, total=False):
     """State for the transcription source selection step."""
 
     selected_files: List[SelectedFile]  # Ordered list of selected files
+    selected_folders: List[str]  # Folder paths toggled for bulk add/remove
     current_directory: str  # Current file browser directory path
     browser_state: Dict[str, Any]  # Serialized BrowserState from file-browser library
     extraction_results: Dict[str, ExtractionResult]  # video_path -> extraction result

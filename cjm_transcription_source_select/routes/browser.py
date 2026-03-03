@@ -6,7 +6,7 @@
 __all__ = ['init_browser_router']
 
 # %% ../../nbs/routes/browser.ipynb #3ea0a085
-from typing import Dict, Any, Tuple, Callable
+from typing import Dict, Any, List, Tuple, Callable
 from pathlib import Path
 
 from fasthtml.common import APIRouter
@@ -16,7 +16,7 @@ from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
 from cjm_workflow_state.state_store import SQLiteWorkflowStateStore
 
 from ..models import SourceSelectUrls, SelectedFile
-from ..utils import detect_file_type
+from ..utils import detect_file_type, is_media_file
 from cjm_transcription_source_select.routes.core import (
     get_step_state, update_step_state, get_session_id_from_sess
 )
@@ -49,9 +49,10 @@ def _handle_navigate(
     else:
         browser_state.current_path = step_state.get("current_directory", home_path)
 
-    # Sync selection with selected_files
+    # Sync selection with selected_files and selected_folders
     selected_files = step_state.get("selected_files", [])
-    sync_browser_selection(browser_state, selected_files)
+    selected_folders = step_state.get("selected_folders", [])
+    sync_browser_selection(browser_state, selected_files, selected_folders)
 
     # Save state
     update_step_state(
@@ -69,6 +70,29 @@ def _handle_navigate(
         home_path=home_path,
     )
 
+# %% ../../nbs/routes/browser.ipynb #a5x4ide6vmb
+def _list_media_in_folder(
+    folder_path: str,  # Directory to scan for media files
+) -> List[SelectedFile]:  # Media files found as SelectedFile dicts
+    """List media files in a directory (shallow, no recursion)."""
+    folder = Path(folder_path)
+    if not folder.is_dir():
+        return []
+    results = []
+    for child in sorted(folder.iterdir()):
+        if child.is_file() and is_media_file(str(child)):
+            file_type = detect_file_type(str(child))
+            if file_type:
+                results.append(SelectedFile(
+                    path=str(child),
+                    filename=child.name,
+                    file_type=file_type,
+                    size_bytes=child.stat().st_size,
+                    duration=None,
+                    format=child.suffix.lstrip("."),
+                ))
+    return results
+
 # %% ../../nbs/routes/browser.ipynb #e2c1c0d5
 def _handle_select(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
@@ -78,40 +102,69 @@ def _handle_select(
     home_path: str,  # Home directory path
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
-    path: str,  # File path to toggle
+    path: str,  # File or folder path to toggle
 ):  # (browser panel, OOB selection panel, OOB stats panel)
-    """Toggle a file in/out of the selected files list."""
+    """Toggle a file or folder in/out of the selected files list."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
     browser_state = get_browser_state(step_state, home_path)
     selected_files = step_state.get("selected_files", [])
+    selected_folders = step_state.get("selected_folders", [])
     extraction_results = step_state.get("extraction_results", {})
 
-    # Toggle: remove if present, add if not
-    existing_paths = {f["path"] for f in selected_files}
-    if path in existing_paths:
-        selected_files = [f for f in selected_files if f["path"] != path]
-        extraction_results.pop(path, None)
-    else:
-        file_path = Path(path)
-        file_type = detect_file_type(path)
-        if file_type and file_path.exists():
-            selected_files.append(SelectedFile(
-                path=path,
-                filename=file_path.name,
-                file_type=file_type,
-                size_bytes=file_path.stat().st_size,
-                duration=None,
-                format=file_path.suffix.lstrip("."),
-            ))
+    target = Path(path)
 
-    # Sync browser selection with updated list
-    sync_browser_selection(browser_state, selected_files)
+    if target.is_dir():
+        # Folder toggle: bulk add/remove all media files in directory
+        if path in selected_folders:
+            # Remove all files from this folder and deselect it
+            folder_file_paths = {str(child) for child in target.iterdir()
+                                 if child.is_file() and is_media_file(str(child))}
+            selected_files = [f for f in selected_files if f["path"] not in folder_file_paths]
+            for fp in folder_file_paths:
+                extraction_results.pop(fp, None)
+            selected_folders = [f for f in selected_folders if f != path]
+        else:
+            # Add media files not already selected; skip folders with no media files
+            all_media = _list_media_in_folder(path)
+            if all_media:
+                existing_paths = {f["path"] for f in selected_files}
+                new_files = [f for f in all_media if f["path"] not in existing_paths]
+                selected_files.extend(new_files)
+                selected_folders.append(path)
+    else:
+        # Single file toggle (existing behavior)
+        existing_paths = {f["path"] for f in selected_files}
+        if path in existing_paths:
+            selected_files = [f for f in selected_files if f["path"] != path]
+            extraction_results.pop(path, None)
+            # Auto-deselect parent folder if no files from it remain
+            parent = str(target.parent)
+            if parent in selected_folders:
+                remaining = {f["path"] for f in selected_files}
+                has_sibling = any(str(Path(p).parent) == parent for p in remaining)
+                if not has_sibling:
+                    selected_folders = [f for f in selected_folders if f != parent]
+        else:
+            file_type = detect_file_type(path)
+            if file_type and target.exists():
+                selected_files.append(SelectedFile(
+                    path=path,
+                    filename=target.name,
+                    file_type=file_type,
+                    size_bytes=target.stat().st_size,
+                    duration=None,
+                    format=target.suffix.lstrip("."),
+                ))
+
+    # Sync browser selection with updated lists
+    sync_browser_selection(browser_state, selected_files, selected_folders)
 
     # Clear verified state when selection changes
     update_step_state(
         state_store, workflow_id, session_id,
         selected_files=selected_files,
+        selected_folders=selected_folders,
         extraction_results=extraction_results,
         verified=False,
         committed_audio_paths=[],
