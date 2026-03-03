@@ -24,6 +24,7 @@ from cjm_transcription_source_select.components.file_browser_panel import (
     get_browser_state, sync_browser_selection, render_browser_panel
 )
 from ..components.selection_panel import render_selection_panel
+from ..components.stats_panel import render_stats_panel
 
 # %% ../../nbs/routes/browser.ipynb #9d4cc280
 def _handle_navigate(
@@ -78,17 +79,19 @@ def _handle_select(
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
     path: str,  # File path to toggle
-):  # (browser panel, OOB selection panel)
+):  # (browser panel, OOB selection panel, OOB stats panel)
     """Toggle a file in/out of the selected files list."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
     browser_state = get_browser_state(step_state, home_path)
     selected_files = step_state.get("selected_files", [])
+    extraction_results = step_state.get("extraction_results", {})
 
     # Toggle: remove if present, add if not
     existing_paths = {f["path"] for f in selected_files}
     if path in existing_paths:
         selected_files = [f for f in selected_files if f["path"] != path]
+        extraction_results.pop(path, None)
     else:
         file_path = Path(path)
         file_type = detect_file_type(path)
@@ -109,6 +112,7 @@ def _handle_select(
     update_step_state(
         state_store, workflow_id, session_id,
         selected_files=selected_files,
+        extraction_results=extraction_results,
         verified=False,
         committed_audio_paths=[],
         browser_state=browser_state.to_dict(),
@@ -124,11 +128,15 @@ def _handle_select(
         home_path=home_path,
     )
 
-    # OOB swap: selection panel (use hyphenated key for correct HTML attribute)
-    selection = render_selection_panel(selected_files, urls)
+    # OOB swap: selection panel
+    selection = render_selection_panel(selected_files, urls, extraction_results)
     selection.attrs["hx-swap-oob"] = "outerHTML"
 
-    return browser, selection
+    # OOB swap: stats panel
+    stats = render_stats_panel(selected_files, urls, extraction_results, verified=False)
+    stats.attrs["hx-swap-oob"] = "outerHTML"
+
+    return browser, selection, stats
 
 # %% ../../nbs/routes/browser.ipynb #9220ffe5
 def init_browser_router(

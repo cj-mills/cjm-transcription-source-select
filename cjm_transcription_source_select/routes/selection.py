@@ -20,6 +20,7 @@ from cjm_transcription_source_select.routes.core import (
     get_step_state, update_step_state, get_session_id_from_sess
 )
 from ..components.selection_panel import render_selection_panel
+from ..components.stats_panel import render_stats_panel
 from cjm_transcription_source_select.components.file_browser_panel import (
     get_browser_state, sync_browser_selection, render_browser_panel
 )
@@ -67,7 +68,7 @@ def _handle_remove(
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
     path: str,  # File path to remove
-):  # (selection panel, OOB browser panel)
+):  # (selection panel, OOB browser panel, OOB stats panel)
     """Remove a file from the selection."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
@@ -75,18 +76,25 @@ def _handle_remove(
 
     selected_files = [f for f in selected_files if f["path"] != path]
 
+    # Clean up extraction result for the removed file
+    extraction_results = step_state.get("extraction_results", {})
+    extraction_results.pop(path, None)
+
     update_step_state(
         state_store, workflow_id, session_id,
         selected_files=selected_files,
+        extraction_results=extraction_results,
         verified=False,
         committed_audio_paths=[],
     )
 
-    selection = render_selection_panel(selected_files, urls)
+    selection = render_selection_panel(selected_files, urls, extraction_results)
     browser_oob = _render_oob_browser(
         state_store, provider, config, workflow_id, home_path, urls, session_id, selected_files
     )
-    return selection, browser_oob
+    stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
+    stats_oob.attrs["hx-swap-oob"] = "outerHTML"
+    return selection, browser_oob, stats_oob
 
 # %% ../../nbs/routes/selection.ipynb #35033565
 async def _handle_reorder(
@@ -131,13 +139,14 @@ def _handle_clear(
     home_path: str,  # Home directory path
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
-):  # (selection panel, OOB browser panel)
+):  # (selection panel, OOB browser panel, OOB stats panel)
     """Clear all selected files."""
     session_id = get_session_id_from_sess(sess)
 
     update_step_state(
         state_store, workflow_id, session_id,
         selected_files=[],
+        extraction_results={},
         verified=False,
         committed_audio_paths=[],
     )
@@ -146,7 +155,9 @@ def _handle_clear(
     browser_oob = _render_oob_browser(
         state_store, provider, config, workflow_id, home_path, urls, session_id, []
     )
-    return selection, browser_oob
+    stats_oob = render_stats_panel([], urls)
+    stats_oob.attrs["hx-swap-oob"] = "outerHTML"
+    return selection, browser_oob, stats_oob
 
 # %% ../../nbs/routes/selection.ipynb #9d362de7
 def init_selection_router(

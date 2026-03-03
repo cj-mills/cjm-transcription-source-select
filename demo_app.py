@@ -53,12 +53,15 @@ def main():
     from cjm_transcription_source_select.routes.browser import init_browser_router
     from cjm_transcription_source_select.routes.selection import init_selection_router
     from cjm_transcription_source_select.routes.preview import init_preview_router
+    from cjm_transcription_source_select.routes.verify import init_verify_router
+    from cjm_transcription_source_select.services.source_select import SourceSelectService
     from cjm_transcription_source_select.components.file_browser_panel import (
         create_media_browser_config, get_browser_state, sync_browser_selection,
         render_browser_panel,
     )
     from cjm_transcription_source_select.components.selection_panel import render_selection_panel
     from cjm_transcription_source_select.components.preview_panel import render_preview_panel
+    from cjm_transcription_source_select.components.stats_panel import render_stats_panel
     from cjm_transcription_source_select.components.helpers import generate_sortable_init_script
 
     print("\n" + "=" * 70)
@@ -97,6 +100,14 @@ def main():
             print(f"    - {meta.name}")
     else:
         print(f"  No plugins discovered")
+
+    # -------------------------------------------------------------------------
+    # Service layer
+    # -------------------------------------------------------------------------
+
+    service = SourceSelectService(plugin_manager)
+    service.ensure_loaded()
+    print(f"  FFmpeg plugin available: {service.is_available()}")
 
     # -------------------------------------------------------------------------
     # File system provider and browser config
@@ -141,6 +152,14 @@ def main():
         prefix="/preview",
     )
 
+    verify_router, verify_routes = init_verify_router(
+        state_store=state_store,
+        workflow_id=workflow_id,
+        urls=urls,
+        service=service,
+        prefix="/verify",
+    )
+
     # Populate URL bundle
     urls.navigate = browser_routes["navigate"].to()
     urls.select = browser_routes["select"].to()
@@ -149,11 +168,13 @@ def main():
     urls.clear = selection_routes["clear"].to()
     urls.preview = preview_routes["preview"].to()
     urls.media_src = preview_routes["media_src"].to()
+    urls.verify = verify_routes["verify"].to()
 
     print(f"  Routes initialized")
     for name, url in [("navigate", urls.navigate), ("select", urls.select),
                       ("remove", urls.remove), ("reorder", urls.reorder), ("clear", urls.clear),
-                      ("preview", urls.preview), ("media_src", urls.media_src)]:
+                      ("preview", urls.preview), ("media_src", urls.media_src),
+                      ("verify", urls.verify)]:
         print(f"    {name}: {url}")
 
     # -------------------------------------------------------------------------
@@ -213,6 +234,8 @@ def main():
 
             # Sync selection highlights with selected_files
             selected_files = step_state.get("selected_files", [])
+            extraction_results = step_state.get("extraction_results", {})
+            verified = step_state.get("verified", False)
             sync_browser_selection(browser_state, selected_files)
 
             # Render panels
@@ -225,8 +248,9 @@ def main():
                 home_path=home_path,
             )
 
-            selection_panel = render_selection_panel(selected_files, urls)
+            selection_panel = render_selection_panel(selected_files, urls, extraction_results)
             preview_panel = render_preview_panel(media_src_url=urls.media_src)
+            stats_panel = render_stats_panel(selected_files, urls, extraction_results, verified)
 
             return Div(
                 H1("Source Selection",
@@ -241,6 +265,9 @@ def main():
 
                 # Preview panel (below columns)
                 preview_panel,
+
+                # Stats / verify panel
+                stats_panel,
 
                 # SortableJS library + initialization (must be in body, not head)
                 Script(src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"),
@@ -268,7 +295,7 @@ def main():
         theme_selector=True
     )
 
-    register_routes(app, router, browser_router, selection_router, preview_router)
+    register_routes(app, router, browser_router, selection_router, preview_router, verify_router)
 
     # Debug output
     print("\n" + "=" * 70)

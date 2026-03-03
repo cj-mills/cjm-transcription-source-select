@@ -6,7 +6,7 @@
 __all__ = ['render_queue_item', 'render_selection_panel']
 
 # %% ../../nbs/components/selection_panel.ipynb #2d5cdc98
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import json
 
 from fasthtml.common import Div, Span, Button, Form, Ul, Li, P, Hidden
@@ -32,7 +32,7 @@ from cjm_fasthtml_tailwind.core.base import combine_classes
 
 from cjm_fasthtml_lucide_icons.factory import lucide_icon
 
-from ..models import SourceSelectUrls, SelectedFile
+from ..models import SourceSelectUrls, SelectedFile, ExtractionResult
 from ..html_ids import SourceSelectHtmlIds
 from ..utils import format_file_size, format_duration
 
@@ -45,17 +45,64 @@ def _render_type_badge(
         return Span("video", cls=combine_classes(badge, badge_styles.ghost, badge_sizes.sm, text_dui.secondary))
     return Span("audio", cls=combine_classes(badge, badge_styles.ghost, badge_sizes.sm, text_dui.info))
 
+def _render_extraction_status(
+    extraction_result: Optional[ExtractionResult],  # Extraction result for this video file
+    file_path: str,  # File path for HTML ID
+) -> Optional[Span]:  # Status indicator or None
+    """Render extraction status indicator for a video file."""
+    if extraction_result is None:
+        return Span(
+            "Needs extraction",
+            id=SourceSelectHtmlIds.extraction_status(file_path),
+            cls=combine_classes(font_size.xs, text_dui.warning, m.l(1))
+        )
+
+    status = extraction_result.get("status", "pending")
+    if status == "complete":
+        return Span(
+            "Extracted",
+            id=SourceSelectHtmlIds.extraction_status(file_path),
+            cls=combine_classes(font_size.xs, text_dui.success, m.l(1))
+        )
+    elif status == "extracting":
+        return Span(
+            "Extracting...",
+            id=SourceSelectHtmlIds.extraction_status(file_path),
+            cls=combine_classes(font_size.xs, text_dui.info, m.l(1))
+        )
+    elif status == "error":
+        error_msg = extraction_result.get("error", "Unknown error")
+        return Span(
+            f"Error: {error_msg}",
+            id=SourceSelectHtmlIds.extraction_status(file_path),
+            cls=combine_classes(font_size.xs, text_dui.error, m.l(1)),
+            title=error_msg
+        )
+    else:  # pending
+        return Span(
+            "Needs extraction",
+            id=SourceSelectHtmlIds.extraction_status(file_path),
+            cls=combine_classes(font_size.xs, text_dui.warning, m.l(1))
+        )
+
 # %% ../../nbs/components/selection_panel.ipynb #1b359fc0
 def render_queue_item(
     selected_file: SelectedFile,  # Selected file data
     index: int,  # Position in queue (1-based)
     urls: SourceSelectUrls,  # URL bundle
+    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # video_path → result
 ) -> Li:  # Queue item element
     """Render a single item in the selection queue."""
     path = selected_file["path"]
     filename = selected_file.get("filename", path.rsplit("/", 1)[-1])
     file_type = selected_file.get("file_type", "audio")
     size_bytes = selected_file.get("size_bytes", 0)
+
+    # Extraction status for video files
+    extraction_status = None
+    if file_type == "video":
+        result = (extraction_results or {}).get(path)
+        extraction_status = _render_extraction_status(result, path)
 
     return Li(
         Hidden(name="item", value=path),
@@ -78,6 +125,9 @@ def render_queue_item(
 
         # Type badge
         _render_type_badge(file_type),
+
+        # Extraction status (video files only)
+        extraction_status,
 
         # Size
         Span(
@@ -121,13 +171,14 @@ def render_queue_item(
 def render_selection_panel(
     selected_files: List[SelectedFile],  # Ordered list of selected files
     urls: SourceSelectUrls,  # URL bundle
+    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # video_path → result
 ) -> Div:  # Selection panel component
     """Render the selection panel with drag-drop reordering."""
     count = len(selected_files)
 
     # Queue items
     queue_items = [
-        render_queue_item(f, i + 1, urls)
+        render_queue_item(f, i + 1, urls, extraction_results)
         for i, f in enumerate(selected_files)
     ]
 
