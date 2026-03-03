@@ -12,21 +12,25 @@ pip install cjm_transcription_source_select
 ## Project Structure
 
     nbs/
-    ├── components/ (4)
+    ├── components/ (5)
     │   ├── file_browser_panel.ipynb  # File browser panel configuration and rendering for browsing local audio/video files
     │   ├── helpers.ipynb             # Shared helper functions for the transcription source selection step
     │   ├── preview_panel.ipynb       # Collapsible preview panel with audio/video player and file metadata
-    │   └── selection_panel.ipynb     # Selection panel component showing selected files with drag-drop reordering
-    ├── routes/ (4)
+    │   ├── selection_panel.ipynb     # Selection panel component showing selected files with drag-drop reordering
+    │   └── stats_panel.ipynb         # Stats summary and verify selection button
+    ├── routes/ (5)
     │   ├── browser.ipynb    # Route handlers for file browser navigation and file selection
     │   ├── core.ipynb       # State management helpers for the transcription source selection step
     │   ├── preview.ipynb    # Route handlers for media file serving and preview panel rendering
-    │   └── selection.ipynb  # Route handlers for selection queue management (remove, reorder, clear)
+    │   ├── selection.ipynb  # Route handlers for selection queue management (remove, reorder, clear)
+    │   └── verify.ipynb     # Route handler for verify selection + audio extraction from video sources
+    ├── services/ (1)
+    │   └── source_select.ipynb  # Service layer for file operations and audio extraction from video via FFmpeg plugin
     ├── html_ids.ipynb  # HTML ID constants for the transcription source selection step
     ├── models.ipynb    # Data models and URL bundles for the transcription source selection step
     └── utils.ipynb     # Utility functions for file type detection, duration formatting, and extension filtering
 
-Total: 11 notebooks across 3 directories
+Total: 14 notebooks across 3 directories
 
 ## Module Dependencies
 
@@ -36,37 +40,49 @@ graph LR
     components_helpers[components.helpers<br/>components/helpers]
     components_preview_panel[components.preview_panel<br/>components/preview_panel]
     components_selection_panel[components.selection_panel<br/>components/selection_panel]
+    components_stats_panel[components.stats_panel<br/>components/stats_panel]
     html_ids[html_ids<br/>html_ids]
     models[models<br/>models]
     routes_browser[routes.browser<br/>routes/browser]
     routes_core[routes.core<br/>routes/core]
     routes_preview[routes.preview<br/>routes/preview]
     routes_selection[routes.selection<br/>routes/selection]
+    routes_verify[routes.verify<br/>routes/verify]
+    services_source_select[services.source_select<br/>services/source_select]
     utils[utils<br/>utils]
 
     components_file_browser_panel --> html_ids
-    components_preview_panel --> html_ids
-    components_preview_panel --> utils
     components_preview_panel --> models
+    components_preview_panel --> utils
+    components_preview_panel --> html_ids
     components_selection_panel --> models
-    components_selection_panel --> html_ids
     components_selection_panel --> utils
-    routes_browser --> models
-    routes_browser --> utils
+    components_selection_panel --> html_ids
+    components_stats_panel --> models
+    components_stats_panel --> html_ids
     routes_browser --> components_file_browser_panel
     routes_browser --> routes_core
+    routes_browser --> utils
     routes_browser --> components_selection_panel
+    routes_browser --> models
+    routes_browser --> components_stats_panel
     routes_core --> models
     routes_preview --> models
     routes_preview --> routes_core
     routes_preview --> components_preview_panel
     routes_selection --> components_file_browser_panel
-    routes_selection --> models
     routes_selection --> routes_core
     routes_selection --> components_selection_panel
+    routes_selection --> models
+    routes_selection --> components_stats_panel
+    routes_verify --> components_stats_panel
+    routes_verify --> models
+    routes_verify --> routes_core
+    routes_verify --> services_source_select
+    routes_verify --> components_selection_panel
 ```
 
-*20 cross-module dependencies detected*
+*29 cross-module dependencies detected*
 
 ## CLI Reference
 
@@ -114,7 +130,7 @@ def _handle_select(
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
     path: str,  # File path to toggle
-):  # (browser panel, OOB selection panel)
+):  # (browser panel, OOB selection panel, OOB stats panel)
     "Toggle a file in/out of the selected files list."
 ```
 
@@ -471,7 +487,7 @@ def _handle_remove(
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
     path: str,  # File path to remove
-):  # (selection panel, OOB browser panel)
+):  # (selection panel, OOB browser panel, OOB stats panel)
     "Remove a file from the selection."
 ```
 
@@ -495,7 +511,7 @@ def _handle_clear(
     home_path: str,  # Home directory path
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
-):  # (selection panel, OOB browser panel)
+):  # (selection panel, OOB browser panel, OOB stats panel)
     "Clear all selected files."
 ```
 
@@ -536,10 +552,19 @@ def _render_type_badge(
 ```
 
 ``` python
+def _render_extraction_status(
+    extraction_result: Optional[ExtractionResult],  # Extraction result for this video file
+    file_path: str,  # File path for HTML ID
+) -> Optional[Span]:  # Status indicator or None
+    "Render extraction status indicator for a video file."
+```
+
+``` python
 def render_queue_item(
     selected_file: SelectedFile,  # Selected file data
     index: int,  # Position in queue (1-based)
     urls: SourceSelectUrls,  # URL bundle
+    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # video_path → result
 ) -> Li:  # Queue item element
     "Render a single item in the selection queue."
 ```
@@ -548,8 +573,94 @@ def render_queue_item(
 def render_selection_panel(
     selected_files: List[SelectedFile],  # Ordered list of selected files
     urls: SourceSelectUrls,  # URL bundle
+    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # video_path → result
 ) -> Div:  # Selection panel component
     "Render the selection panel with drag-drop reordering."
+```
+
+### services/source_select (`source_select.ipynb`)
+
+> Service layer for file operations and audio extraction from video via
+> FFmpeg plugin
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.services.source_select import (
+    SourceSelectService
+)
+```
+
+#### Classes
+
+``` python
+class SourceSelectService:
+    def __init__(self,
+                 plugin_manager: PluginManager,  # Plugin manager instance
+                 plugin_name: str = "cjm-media-plugin-ffmpeg",  # FFmpeg plugin name
+                )
+    "Service for file metadata and audio extraction from video."
+    
+    def __init__(self,
+                     plugin_manager: PluginManager,  # Plugin manager instance
+                     plugin_name: str = "cjm-media-plugin-ffmpeg",  # FFmpeg plugin name
+                    )
+    
+    def is_available(self) -> bool:  # True if plugin is loaded
+            """Check if the FFmpeg plugin is loaded."""
+            return self._manager.get_plugin(self._plugin_name) is not None
+    
+        def ensure_loaded(self,
+                          config: Optional[Dict[str, Any]] = None,  # Plugin config override
+                         ) -> bool:  # True if plugin is now loaded
+        "Check if the FFmpeg plugin is loaded."
+    
+    def ensure_loaded(self,
+                          config: Optional[Dict[str, Any]] = None,  # Plugin config override
+                         ) -> bool:  # True if plugin is now loaded
+        "Ensure the FFmpeg plugin is loaded, loading it if necessary."
+    
+    async def get_file_info(
+            self,
+            file_path: str,  # Path to media file
+        ) -> Dict[str, Any]:  # MediaMetadata dict (duration, streams, etc.)
+        "Get media file metadata via FFmpeg plugin."
+    
+    async def extract_audio(
+            self,
+            video_path: str,  # Path to video file
+        ) -> Dict[str, Any]:  # {job_id, output_path, duration, codec, stream_copy}
+        "Extract audio from a video file via FFmpeg plugin (stream copy)."
+    
+    def extract_audio_sync(
+            self,
+            video_path: str,  # Path to video file
+        ) -> Dict[str, Any]:  # {job_id, output_path, duration, codec, stream_copy}
+        "Synchronous wrapper for extract_audio."
+```
+
+### components/stats_panel (`stats_panel.ipynb`)
+
+> Stats summary and verify selection button
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.components.stats_panel import (
+    render_stats_panel
+)
+```
+
+#### Functions
+
+``` python
+def render_stats_panel(
+    selected_files: List[SelectedFile],  # Current selection
+    urls: SourceSelectUrls,  # URL bundle
+    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # Extraction results
+    verified: bool = False,  # Whether selection is verified
+) -> Div:  # Stats panel component
+    "Render stats summary with verify button."
 ```
 
 ### utils (`utils.ipynb`)
@@ -599,4 +710,42 @@ def format_duration(
 AUDIO_EXTENSIONS
 VIDEO_EXTENSIONS
 MEDIA_EXTENSIONS
+```
+
+### routes/verify (`verify.ipynb`)
+
+> Route handler for verify selection + audio extraction from video
+> sources
+
+#### Import
+
+``` python
+from cjm_transcription_source_select.routes.verify import (
+    logger,
+    init_verify_router
+)
+```
+
+#### Functions
+
+``` python
+async def _handle_verify(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    workflow_id: str,  # Workflow identifier
+    urls: SourceSelectUrls,  # URL bundle
+    service: SourceSelectService,  # Source select service
+    sess,  # FastHTML session
+):  # (stats panel, OOB selection panel)
+    "Verify selection and extract audio from video files."
+```
+
+``` python
+def init_verify_router(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    workflow_id: str,  # Workflow identifier
+    urls: SourceSelectUrls,  # Mutable URL bundle
+    service: SourceSelectService,  # Source select service
+    prefix: str = "/verify",  # Route prefix
+) -> Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)
+    "Initialize verify route for selection verification and audio extraction."
 ```
