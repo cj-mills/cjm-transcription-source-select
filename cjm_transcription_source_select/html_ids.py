@@ -19,6 +19,9 @@ class SourceSelectHtmlIds:
     # Main container
     MAIN_CONTAINER = "tss-main-container"
 
+    # Two-column grid (browser + selection, viewport-fitted)
+    TWO_COL_GRID = "tss-two-col-grid"
+
     # File Browser Panel (left column)
     BROWSER_PANEL = "tss-browser-panel"
     BROWSER_BREADCRUMBS = "tss-browser-breadcrumbs"

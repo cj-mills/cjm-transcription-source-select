@@ -43,8 +43,8 @@ def create_media_browser_config() -> FileBrowserConfig:  # Configured for audio/
         ),
         show_path_bar=True,
         show_path_input=True,
-        show_toolbar=True,
-        show_parent_navigation=True,
+        show_toolbar=False,
+        show_parent_navigation=False,
         container_id=SourceSelectHtmlIds.BROWSER_PANEL,
         content_id=SourceSelectHtmlIds.BROWSER_FILE_LIST,
     )

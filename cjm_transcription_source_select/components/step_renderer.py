@@ -19,10 +19,14 @@ from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui
 from cjm_fasthtml_tailwind.utilities.spacing import p, m
 from cjm_fasthtml_tailwind.utilities.sizing import w, h
 from cjm_fasthtml_tailwind.utilities.typography import font_size, font_weight
+from cjm_fasthtml_tailwind.utilities.layout import overflow
 from cjm_fasthtml_tailwind.utilities.flexbox_and_grid import (
     flex_display, flex_direction, grid_display, grid_cols, gap
 )
 from cjm_fasthtml_tailwind.core.base import combine_classes
+
+from cjm_fasthtml_viewport_fit.models import ViewportFitConfig
+from cjm_fasthtml_viewport_fit.components import render_viewport_fit_script
 
 from cjm_transcription_source_select.models import (
     SourceSelectUrls, SelectedFile, ExtractionResult
@@ -37,6 +41,12 @@ from .stats_panel import render_stats_panel
 from .helpers import generate_sortable_init_script
 
 # %% ../../nbs/components/step_renderer.ipynb #f6a7b8c9
+# Viewport fit config for the two-column grid
+_VIEWPORT_FIT_CONFIG = ViewportFitConfig(
+    namespace="tss",
+    target_id=SourceSelectHtmlIds.TWO_COL_GRID,
+)
+
 def render_source_select_step(
     selected_files: List[SelectedFile],  # Ordered selection
     extraction_results: Dict[str, ExtractionResult],  # video_path -> result
@@ -72,9 +82,11 @@ def render_source_select_step(
 
     return Div(
         # Two-column layout (browser left, selection right)
+        # Height fitted to remaining viewport space via cjm-fasthtml-viewport-fit
         Div(
-            Div(browser_panel, cls=w.full),
-            Div(selection_panel, cls=w.full),
+            Div(browser_panel, cls=combine_classes(w.full, overflow.y.auto)),
+            Div(selection_panel, cls=combine_classes(w.full, overflow.y.auto)),
+            id=SourceSelectHtmlIds.TWO_COL_GRID,
             cls=combine_classes(str(grid_display), grid_cols(1), grid_cols(2).lg, gap(4))
         ),
 
@@ -87,6 +99,9 @@ def render_source_select_step(
         # SortableJS library + initialization
         Script(src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"),
         Script(generate_sortable_init_script()),
+
+        # Viewport fit script (fits two-column grid to remaining viewport)
+        render_viewport_fit_script(_VIEWPORT_FIT_CONFIG),
 
         # Script runner for OOB-triggered JS
         Div(id=SourceSelectHtmlIds.SCRIPT_RUNNER),
