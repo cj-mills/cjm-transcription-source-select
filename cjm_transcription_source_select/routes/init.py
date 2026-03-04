@@ -76,6 +76,8 @@ def init_source_select_routers(
     # Phase 3: Populate URL bundle
     urls.navigate = browser_routes["navigate"].to()
     urls.select = browser_routes["select"].to()
+    urls.toggle_view = browser_routes["toggle_view"].to()
+    urls.change_sort = browser_routes["change_sort"].to()
     urls.remove = selection_routes["remove"].to()
     urls.reorder = selection_routes["reorder"].to()
     urls.clear = selection_routes["clear"].to()

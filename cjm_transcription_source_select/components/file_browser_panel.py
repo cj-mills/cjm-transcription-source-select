@@ -43,7 +43,7 @@ def create_media_browser_config() -> FileBrowserConfig:  # Configured for audio/
         ),
         show_path_bar=True,
         show_path_input=True,
-        show_toolbar=False,
+        show_toolbar=True,
         show_parent_navigation=False,
         container_id=SourceSelectHtmlIds.BROWSER_PANEL,
         content_id=SourceSelectHtmlIds.BROWSER_FILE_LIST,
@@ -80,6 +80,8 @@ def render_browser_panel(
     navigate_url: str,  # URL for directory navigation
     select_url: str,  # URL for file selection toggle
     home_path: str = "",  # Home directory for nav buttons
+    toggle_view_url: str = "",  # URL for view mode toggle
+    change_sort_url: str = "",  # URL for sort column/direction change
 ) -> Any:  # Rendered file browser component
     """Render the file browser panel using the library's built-in UI."""
     listing = provider.list_directory(browser_state.current_path)
@@ -91,8 +93,8 @@ def render_browser_panel(
         state=browser_state,
         navigate_url=navigate_url,
         select_url=select_url,
-        toggle_view_url="",
-        change_sort_url="",
+        toggle_view_url=toggle_view_url,
+        change_sort_url=change_sort_url,
         refresh_url=navigate_url,
         path_input_url=navigate_url,
         home_path=home_path or str(Path.home()),

@@ -74,6 +74,8 @@ def render_source_select_step(
         navigate_url=urls.navigate,
         select_url=urls.select,
         home_path=home_path,
+        toggle_view_url=urls.toggle_view,
+        change_sort_url=urls.change_sort,
     )
 
     selection_panel = render_selection_panel(selected_files, urls, extraction_results)

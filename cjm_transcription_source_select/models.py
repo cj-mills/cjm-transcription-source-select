@@ -50,6 +50,8 @@ class SourceSelectUrls:
     # Browser operations
     navigate: str = ""  # Navigate to directory
     select: str = ""  # Toggle file selection (from file browser)
+    toggle_view: str = ""  # Toggle list/grid view mode
+    change_sort: str = ""  # Change sort column/direction
 
     # Selection operations (Phase 3)
     remove: str = ""  # Remove file from selection

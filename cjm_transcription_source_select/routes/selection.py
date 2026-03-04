@@ -57,6 +57,8 @@ def _render_oob_browser(
         navigate_url=urls.navigate,
         select_url=urls.select,
         home_path=home_path,
+        toggle_view_url=urls.toggle_view,
+        change_sort_url=urls.change_sort,
     )
     browser.attrs["hx-swap-oob"] = "outerHTML"
     return browser

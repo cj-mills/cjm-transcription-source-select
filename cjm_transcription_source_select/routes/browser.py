@@ -13,6 +13,10 @@ from fasthtml.common import APIRouter
 
 from cjm_fasthtml_file_browser.core.config import FileBrowserConfig
 from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
+from cjm_fasthtml_file_browser.routes.handlers import (
+    _handle_toggle_view as _fb_handle_toggle_view,
+    _handle_change_sort as _fb_handle_change_sort,
+)
 from cjm_workflow_state.state_store import SQLiteWorkflowStateStore
 
 from ..models import SourceSelectUrls, SelectedFile
@@ -68,6 +72,8 @@ def _handle_navigate(
         navigate_url=urls.navigate,
         select_url=urls.select,
         home_path=home_path,
+        toggle_view_url=urls.toggle_view,
+        change_sort_url=urls.change_sort,
     )
 
 # %% ../../nbs/routes/browser.ipynb #a5x4ide6vmb
@@ -179,6 +185,8 @@ def _handle_select(
         navigate_url=urls.navigate,
         select_url=urls.select,
         home_path=home_path,
+        toggle_view_url=urls.toggle_view,
+        change_sort_url=urls.change_sort,
     )
 
     # OOB swap: selection panel
@@ -201,9 +209,45 @@ def init_browser_router(
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/browser",  # Route prefix
 ) -> Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)
-    """Initialize the file browser router with navigate and select handlers."""
+    """Initialize the file browser router with navigate, select, toggle_view, and change_sort handlers."""
     router = APIRouter(prefix=prefix)
     _home = home_path or provider.get_home_path()
+
+    def _make_state_getter(sess):
+        """Create a state_getter callback for file browser handler delegation."""
+        session_id = get_session_id_from_sess(sess)
+        step_state = get_step_state(state_store, workflow_id, session_id)
+        browser_state = get_browser_state(step_state, _home)
+        # Sync selection highlights
+        selected_files = step_state.get("selected_files", [])
+        selected_folders = step_state.get("selected_folders", [])
+        sync_browser_selection(browser_state, selected_files, selected_folders)
+        return lambda: browser_state
+
+    def _make_state_setter(sess):
+        """Create a state_setter callback for file browser handler delegation."""
+        session_id = get_session_id_from_sess(sess)
+        def setter(browser_state):
+            update_step_state(
+                state_store, workflow_id, session_id,
+                browser_state=browser_state.to_dict(),
+            )
+        return setter
+
+    def _make_render_fn():
+        """Create a render_fn callback for file browser handler delegation."""
+        def render_fn(browser_state):
+            return render_browser_panel(
+                browser_state=browser_state,
+                config=config,
+                provider=provider,
+                navigate_url=urls.navigate,
+                select_url=urls.select,
+                home_path=_home,
+                toggle_view_url=urls.toggle_view,
+                change_sort_url=urls.change_sort,
+            )
+        return render_fn
 
     @router
     def navigate(sess, path: str = ""):
@@ -224,9 +268,32 @@ def init_browser_router(
             sess, path,
         )
 
+    @router
+    def toggle_view(sess, view_mode: str = "list"):
+        """Toggle between list and grid view."""
+        return _fb_handle_toggle_view(
+            state_getter=_make_state_getter(sess),
+            state_setter=_make_state_setter(sess),
+            view_mode=view_mode,
+            render_fn=_make_render_fn(),
+        )
+
+    @router
+    def change_sort(sess, sort_by: str = "name", sort_descending: str = "false"):
+        """Change the sort column and direction."""
+        return _fb_handle_change_sort(
+            state_getter=_make_state_getter(sess),
+            state_setter=_make_state_setter(sess),
+            sort_by=sort_by,
+            sort_descending=sort_descending,
+            render_fn=_make_render_fn(),
+        )
+
     routes = {
         "navigate": navigate,
         "select": select,
+        "toggle_view": toggle_view,
+        "change_sort": change_sort,
     }
 
     return router, routes
