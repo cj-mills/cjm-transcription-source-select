@@ -25,7 +25,7 @@ from cjm_transcription_source_select.routes.core import (
     get_step_state, update_step_state, get_session_id_from_sess
 )
 from cjm_transcription_source_select.components.file_browser_panel import (
-    get_browser_state, sync_browser_selection, render_browser_panel
+    get_browser_state, sync_browser_selection, render_browser_panel, render_browser_listing
 )
 from ..components.selection_panel import render_selection_panel
 from ..components.stats_panel import render_stats_panel
@@ -109,7 +109,7 @@ def _handle_select(
     urls: SourceSelectUrls,  # URL bundle
     sess,  # FastHTML session
     path: str,  # File or folder path to toggle
-):  # (browser panel, OOB selection panel, OOB stats panel)
+):  # (browser listing, OOB selection panel, OOB stats panel)
     """Toggle a file or folder in/out of the selected files list."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
@@ -177,16 +177,13 @@ def _handle_select(
         browser_state=browser_state.to_dict(),
     )
 
-    # Primary swap: browser panel
-    browser = render_browser_panel(
+    # Primary swap: listing content only (innerHTML on content wrapper preserves scroll)
+    listing = render_browser_listing(
         browser_state=browser_state,
         config=config,
         provider=provider,
         navigate_url=urls.navigate,
         select_url=urls.select,
-        home_path=home_path,
-        toggle_view_url=urls.toggle_view,
-        change_sort_url=urls.change_sort,
     )
 
     # OOB swap: selection panel
@@ -197,7 +194,7 @@ def _handle_select(
     stats = render_stats_panel(selected_files, urls, extraction_results, verified=False)
     stats.attrs["hx-swap-oob"] = "outerHTML"
 
-    return browser, selection, stats
+    return listing, selection, stats
 
 # %% ../../nbs/routes/browser.ipynb #9220ffe5
 def init_browser_router(

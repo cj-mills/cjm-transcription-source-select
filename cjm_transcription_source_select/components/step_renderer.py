@@ -13,6 +13,7 @@ from fasthtml.common import Div, H2, P, Script
 from cjm_fasthtml_file_browser.core.config import FileBrowserConfig
 from cjm_fasthtml_file_browser.core.models import BrowserState
 from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
+from cjm_fasthtml_file_browser.components.browser import generate_scroll_preservation_script
 
 from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui
 
@@ -101,6 +102,9 @@ def render_source_select_step(
         # SortableJS library + initialization
         Script(src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"),
         Script(generate_sortable_init_script()),
+
+        # Scroll preservation for file browser select operations
+        Script(generate_scroll_preservation_script(browser_config.content_id)),
 
         # Viewport fit script (fits two-column grid to remaining viewport)
         render_viewport_fit_script(_VIEWPORT_FIT_CONFIG),

@@ -4,7 +4,7 @@
 
 # %% auto #0
 __all__ = ['AUDIO_FILTER_EXTENSIONS', 'VIDEO_FILTER_EXTENSIONS', 'MEDIA_FILTER_EXTENSIONS', 'create_media_browser_config',
-           'get_browser_state', 'sync_browser_selection', 'render_browser_panel']
+           'get_browser_state', 'sync_browser_selection', 'render_browser_panel', 'render_browser_listing']
 
 # %% ../../nbs/components/file_browser_panel.ipynb #c0bdd9e5
 from typing import Any, Dict, List, Optional
@@ -15,7 +15,7 @@ from cjm_fasthtml_file_browser.core.config import (
 )
 from cjm_fasthtml_file_browser.core.models import BrowserState, BrowserSelection
 from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
-from cjm_fasthtml_file_browser.components.browser import render_file_browser
+from cjm_fasthtml_file_browser.components.browser import render_file_browser, render_browser_content
 
 from ..html_ids import SourceSelectHtmlIds
 
@@ -98,5 +98,26 @@ def render_browser_panel(
         refresh_url=navigate_url,
         path_input_url=navigate_url,
         home_path=home_path or str(Path.home()),
+        hx_target=hx_target,
+    )
+
+# %% ../../nbs/components/file_browser_panel.ipynb #i6soa18t72
+def render_browser_listing(
+    browser_state: BrowserState,  # Current browser state
+    config: FileBrowserConfig,  # Browser configuration
+    provider: LocalFileSystemProvider,  # File system provider
+    navigate_url: str,  # URL for directory navigation
+    select_url: str,  # URL for file selection toggle
+) -> Any:  # Rendered listing content (no container wrapper)
+    """Render just the browser listing for select operations (preserves scroll)."""
+    listing = provider.list_directory(browser_state.current_path)
+    hx_target = SourceSelectHtmlIds.as_selector(SourceSelectHtmlIds.BROWSER_PANEL)
+
+    return render_browser_content(
+        listing=listing,
+        config=config,
+        state=browser_state,
+        navigate_url=navigate_url,
+        select_url=select_url,
         hx_target=hx_target,
     )
