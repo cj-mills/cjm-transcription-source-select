@@ -171,6 +171,7 @@ def main():
             step_state = get_step_state(state_store, workflow_id, session_id)
 
             selected_files = step_state.get("selected_files", [])
+            selected_folders = step_state.get("selected_folders", [])
             extraction_results = step_state.get("extraction_results", {})
             verified = step_state.get("verified", False)
 
@@ -180,6 +181,7 @@ def main():
                 verified=verified,
                 urls=urls,
                 render_browser_panel_fn=render_panel_fn,
+                selected_folders=selected_folders,
             )
 
         return handle_htmx_request(

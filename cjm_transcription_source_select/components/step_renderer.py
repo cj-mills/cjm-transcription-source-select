@@ -46,9 +46,13 @@ def render_source_select_step(
     verified: bool,  # Whether selection is verified
     urls: SourceSelectUrls,  # URL bundle
     render_browser_panel_fn: Callable,  # Browser panel render function from init_browser_router
+    selected_folders: Optional[List[str]] = None,  # Folder paths for checkbox sync
 ) -> Div:  # Complete step view
     """Render the complete source selection step."""
-    browser_panel = render_browser_panel_fn()
+    browser_panel = render_browser_panel_fn(
+        selected_files=selected_files,
+        selected_folders=selected_folders or [],
+    )
     selection_panel = render_selection_panel(selected_files, urls, extraction_results)
     preview_panel = render_preview_panel(media_src_url=urls.media_src)
     stats_panel = render_stats_panel(selected_files, urls, extraction_results, verified)

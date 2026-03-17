@@ -213,8 +213,13 @@ def init_browser_router(
     )
 
     # --- Panel render function ---
-    def _render_panel() -> Any:
-        """Render the complete browser panel for initial page load."""
+    def _render_panel(
+        selected_files: Optional[List[Dict[str, Any]]] = None,
+        selected_folders: Optional[List[str]] = None,
+    ) -> Any:
+        """Render the complete browser panel, optionally syncing selection state first."""
+        if selected_files is not None:
+            sync_browser_selection(_browser_state, selected_files, selected_folders or [])
         from cjm_transcription_source_select.components.file_browser_panel import render_browser_panel
         return render_browser_panel(render_fn=fb_routers.render)
 
