@@ -56,49 +56,50 @@ graph LR
     utils[utils<br/>utils]
 
     components_file_browser_panel --> html_ids
+    components_preview_panel --> models
     components_preview_panel --> utils
     components_preview_panel --> html_ids
-    components_preview_panel --> models
     components_selection_panel --> models
     components_selection_panel --> utils
     components_selection_panel --> html_ids
     components_stats_panel --> models
     components_stats_panel --> html_ids
     components_step_renderer --> models
-    components_step_renderer --> components_selection_panel
     components_step_renderer --> html_ids
     components_step_renderer --> components_preview_panel
-    components_step_renderer --> components_stats_panel
+    components_step_renderer --> components_selection_panel
     components_step_renderer --> components_helpers
-    routes_browser --> routes_core
-    routes_browser --> components_selection_panel
+    components_step_renderer --> components_stats_panel
     routes_browser --> utils
     routes_browser --> models
     routes_browser --> components_file_browser_panel
+    routes_browser --> components_selection_panel
+    routes_browser --> routes_core
     routes_browser --> components_stats_panel
     routes_core --> models
     routes_init --> models
-    routes_init --> routes_browser
     routes_init --> routes_preview
     routes_init --> routes_selection
+    routes_init --> routes_browser
     routes_init --> routes_verify
     routes_init --> services_source_select
     routes_preview --> models
     routes_preview --> routes_core
     routes_preview --> components_preview_panel
-    routes_selection --> routes_core
+    routes_selection --> utils
+    routes_selection --> models
     routes_selection --> components_file_browser_panel
     routes_selection --> components_selection_panel
-    routes_selection --> models
+    routes_selection --> routes_core
     routes_selection --> components_stats_panel
-    routes_verify --> models
     routes_verify --> routes_core
-    routes_verify --> components_selection_panel
+    routes_verify --> models
     routes_verify --> components_stats_panel
     routes_verify --> services_source_select
+    routes_verify --> components_selection_panel
 ```
 
-*41 cross-module dependencies detected*
+*42 cross-module dependencies detected*
 
 ## CLI Reference
 
@@ -400,6 +401,7 @@ class SourceSelectUrls:
     remove: str = ''  # Remove file from selection
     reorder: str = ''  # Reorder selection (SortableJS)
     clear: str = ''  # Clear all selected files
+    toggle_all: str = ''  # Toggle all media in current directory
     preview: str = ''  # Preview a file (render player)
     media_src: str = ''  # Serve a local media file for HTML5 players
     verify: str = ''  # Verify selection + trigger extraction
@@ -518,7 +520,7 @@ def _handle_remove(
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
     path: str,  # File path to remove
-):  # (selection panel, OOB browser panel, OOB stats panel)
+):  # OOB tuple (selection panel, browser panel, stats panel)
     "Remove a file from the selection."
 ```
 
@@ -540,8 +542,19 @@ def _handle_clear(
     urls: SourceSelectUrls,  # URL bundle
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
-):  # (selection panel, OOB browser panel, OOB stats panel)
+):  # OOB tuple (selection panel, browser panel, stats panel)
     "Clear all selected files and folders."
+```
+
+``` python
+def _handle_toggle_all(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    workflow_id: str,  # Workflow identifier
+    urls: SourceSelectUrls,  # URL bundle
+    fb_routers: FileBrowserRouters,  # File browser routers
+    sess,  # FastHTML session
+):  # OOB tuple (selection panel, browser panel, stats panel)
+    "Toggle all media files in the current directory."
 ```
 
 ``` python
@@ -712,6 +725,18 @@ from cjm_transcription_source_select.components.step_renderer import (
 ```
 
 #### Functions
+
+``` python
+def _create_parent_keyboard_manager(
+    urls: SourceSelectUrls,  # URL bundle for action button targets
+) -> ZoneManager:  # Parent keyboard manager for hierarchy
+    "Create the parent keyboard manager with ghost-browser zone and queue zone."
+```
+
+``` python
+def _generate_hierarchy_js() -> Script:  # Script element with hierarchy wiring
+    "Generate JavaScript for keyboard system hierarchy and child activation."
+```
 
 ``` python
 def render_source_select_step(

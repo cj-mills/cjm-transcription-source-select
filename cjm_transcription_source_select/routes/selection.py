@@ -6,7 +6,7 @@
 __all__ = ['DEBUG_REORDER', 'init_selection_router']
 
 # %% ../../nbs/routes/selection.ipynb #d9134d0d
-from typing import Any, Dict, Tuple, Callable
+from typing import Any, Dict, List, Tuple, Callable
 from pathlib import Path
 
 from fasthtml.common import APIRouter
@@ -18,13 +18,15 @@ from cjm_fasthtml_file_browser.routes.handlers import FileBrowserRouters
 from cjm_workflow_state.state_store import SQLiteWorkflowStateStore
 
 from ..models import SourceSelectUrls
+from ..utils import is_media_file, detect_file_type
 from cjm_transcription_source_select.routes.core import (
     get_step_state, update_step_state, get_session_id_from_sess
 )
 from ..components.selection_panel import render_selection_panel
 from ..components.stats_panel import render_stats_panel
 from cjm_transcription_source_select.components.file_browser_panel import (
-    get_browser_state, sync_browser_selection, render_browser_panel
+    get_browser_state, sync_browser_selection, render_browser_panel,
+    MEDIA_FILTER_EXTENSIONS,
 )
 
 DEBUG_REORDER = False
@@ -50,7 +52,7 @@ def _handle_remove(
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
     path: str,  # File path to remove
-):  # (selection panel, OOB browser panel, OOB stats panel)
+):  # OOB tuple (selection panel, browser panel, stats panel)
     """Remove a file from the selection."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
@@ -81,11 +83,12 @@ def _handle_remove(
     # Sync browser selection display
     sync_browser_selection(fb_routers._fb_state_getter(), selected_files, selected_folders)
 
-    selection = render_selection_panel(selected_files, urls, extraction_results)
+    selection_oob = render_selection_panel(selected_files, urls, extraction_results)
+    selection_oob.attrs["hx-swap-oob"] = "outerHTML"
     browser_oob = _render_oob_browser(fb_routers, selected_files, selected_folders)
     stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
     stats_oob.attrs["hx-swap-oob"] = "outerHTML"
-    return selection, browser_oob, stats_oob
+    return selection_oob, browser_oob, stats_oob
 
 # %% ../../nbs/routes/selection.ipynb #35033565
 async def _handle_reorder(
@@ -136,7 +139,7 @@ def _handle_clear(
     urls: SourceSelectUrls,  # URL bundle
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
-):  # (selection panel, OOB browser panel, OOB stats panel)
+):  # OOB tuple (selection panel, browser panel, stats panel)
     """Clear all selected files and folders."""
     session_id = get_session_id_from_sess(sess)
 
@@ -152,13 +155,89 @@ def _handle_clear(
     # Sync browser selection display
     sync_browser_selection(fb_routers._fb_state_getter(), [], [])
 
-    selection = render_selection_panel([], urls)
+    selection_oob = render_selection_panel([], urls)
+    selection_oob.attrs["hx-swap-oob"] = "outerHTML"
     browser_oob = _render_oob_browser(fb_routers, [], [])
     stats_oob = render_stats_panel([], urls)
     stats_oob.attrs["hx-swap-oob"] = "outerHTML"
-    return selection, browser_oob, stats_oob
+    return selection_oob, browser_oob, stats_oob
 
 # %% ../../nbs/routes/selection.ipynb #9d362de7
+from ..models import SelectedFile
+
+def _handle_toggle_all(
+    state_store: SQLiteWorkflowStateStore,  # Workflow state store
+    workflow_id: str,  # Workflow identifier
+    urls: SourceSelectUrls,  # URL bundle
+    fb_routers: FileBrowserRouters,  # File browser routers
+    sess,  # FastHTML session
+):  # OOB tuple (selection panel, browser panel, stats panel)
+    """Toggle all media files in the current directory."""
+    session_id = get_session_id_from_sess(sess)
+    step_state = get_step_state(state_store, workflow_id, session_id)
+    selected_files = step_state.get("selected_files", [])
+    extraction_results = step_state.get("extraction_results", {})
+
+    # Get current directory from file browser state
+    browser_state = fb_routers._fb_state_getter()
+    current_dir = Path(browser_state.current_path)
+
+    # List media files in current directory (shallow)
+    media_files = []
+    if current_dir.is_dir():
+        for child in sorted(current_dir.iterdir()):
+            if child.is_file() and is_media_file(str(child)):
+                media_files.append(child)
+
+    if not media_files:
+        return ()
+
+    # Check if all are already selected
+    selected_paths = {f["path"] for f in selected_files}
+    media_paths = {str(f) for f in media_files}
+    all_selected = media_paths.issubset(selected_paths)
+
+    if all_selected:
+        # Remove all media files in current directory
+        selected_files = [f for f in selected_files if f["path"] not in media_paths]
+        for p in media_paths:
+            extraction_results.pop(p, None)
+    else:
+        # Add unselected media files
+        for child in media_files:
+            path = str(child)
+            if path not in selected_paths:
+                file_type = detect_file_type(path)
+                if file_type:
+                    selected_files.append(SelectedFile(
+                        path=path,
+                        filename=child.name,
+                        file_type=file_type,
+                        size_bytes=child.stat().st_size,
+                        duration=None,
+                        format=child.suffix.lstrip("."),
+                    ))
+
+    update_step_state(
+        state_store, workflow_id, session_id,
+        selected_files=selected_files,
+        extraction_results=extraction_results,
+        verified=False,
+        committed_audio_paths=[],
+    )
+
+    # Sync browser selection display
+    selected_folders = step_state.get("selected_folders", [])
+    sync_browser_selection(fb_routers._fb_state_getter(), selected_files, selected_folders)
+
+    selection_oob = render_selection_panel(selected_files, urls, extraction_results)
+    selection_oob.attrs["hx-swap-oob"] = "outerHTML"
+    browser_oob = _render_oob_browser(fb_routers, selected_files, selected_folders)
+    stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
+    stats_oob.attrs["hx-swap-oob"] = "outerHTML"
+    return selection_oob, browser_oob, stats_oob
+
+
 def init_selection_router(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
     provider: LocalFileSystemProvider,  # File system provider (for OOB browser updates)
@@ -191,10 +270,16 @@ def init_selection_router(
         """Clear all selected files."""
         return _handle_clear(state_store, workflow_id, urls, fb_routers, sess)
 
+    @router
+    def toggle_all(sess):
+        """Toggle all media files in the current directory."""
+        return _handle_toggle_all(state_store, workflow_id, urls, fb_routers, sess)
+
     routes = {
         "remove": remove,
         "reorder": reorder,
         "clear": clear,
+        "toggle_all": toggle_all,
     }
 
     return router, routes

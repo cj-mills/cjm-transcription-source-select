@@ -49,6 +49,15 @@ class SourceSelectHtmlIds:
     # Script runner (OOB container for flash feedback scripts)
     SCRIPT_RUNNER = "tss-script-runner"
 
+    # Keyboard navigation
+    GHOST_BROWSER = "tss-ghost-browser"  # Ghost zone wrapping file browser area
+    PARENT_SYSTEM_ID = "tss-parent-kb"  # Parent keyboard system for hierarchy
+    FB_SYSTEM_ID = "tss_fb-collection"  # File browser VC keyboard system (matches vc_prefix)
+
+    # Keyboard action button IDs
+    REMOVE_BTN = "tss-kb-remove-btn"
+    TOGGLE_ALL_BTN = "tss-kb-toggle-all-btn"
+
     @staticmethod
     def _safe_id(
         value: str  # Raw value to sanitize for HTML ID use

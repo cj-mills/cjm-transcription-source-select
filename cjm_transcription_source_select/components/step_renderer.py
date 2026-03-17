@@ -8,21 +8,28 @@ __all__ = ['render_source_select_step']
 # %% ../../nbs/components/step_renderer.ipynb #d4e5f6a7
 from typing import Any, Callable, Dict, List, Optional
 
-from fasthtml.common import Div, H2, P, Script
+from fasthtml.common import Div, H2, P, Script, Button
 
-from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui
+from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui, ring_dui
 
 from cjm_fasthtml_tailwind.utilities.spacing import p, m
 from cjm_fasthtml_tailwind.utilities.sizing import w, h
 from cjm_fasthtml_tailwind.utilities.typography import font_size, font_weight
-from cjm_fasthtml_tailwind.utilities.layout import overflow
+from cjm_fasthtml_tailwind.utilities.layout import overflow, display_tw
 from cjm_fasthtml_tailwind.utilities.flexbox_and_grid import (
     flex_display, flex_direction, grid_display, grid_cols, gap
 )
+from cjm_fasthtml_tailwind.utilities.effects import ring
 from cjm_fasthtml_tailwind.core.base import combine_classes
 
 from cjm_fasthtml_viewport_fit.models import ViewportFitConfig
 from cjm_fasthtml_viewport_fit.components import render_viewport_fit_script
+
+from cjm_fasthtml_keyboard_navigation.core.manager import ZoneManager
+from cjm_fasthtml_keyboard_navigation.core.navigation import LinearVertical, ScrollOnly
+from cjm_fasthtml_keyboard_navigation.core.focus_zone import FocusZone
+from cjm_fasthtml_keyboard_navigation.core.actions import KeyAction
+from cjm_fasthtml_keyboard_navigation.components.system import render_keyboard_system
 
 from cjm_transcription_source_select.models import (
     SourceSelectUrls, SelectedFile, ExtractionResult
@@ -39,6 +46,86 @@ _VIEWPORT_FIT_CONFIG = ViewportFitConfig(
     namespace="tss",
     target_id=SourceSelectHtmlIds.TWO_COL_GRID,
 )
+
+
+def _create_parent_keyboard_manager(
+    urls: SourceSelectUrls,  # URL bundle for action button targets
+) -> ZoneManager:  # Parent keyboard manager for hierarchy
+    """Create the parent keyboard manager with ghost-browser zone and queue zone."""
+    ghost_browser_zone = FocusZone(
+        id=SourceSelectHtmlIds.GHOST_BROWSER,
+        item_selector=None,
+        navigation=ScrollOnly(),
+        zone_focus_classes=(str(ring(2)), str(ring_dui.primary)),
+    )
+
+    queue_zone = FocusZone(
+        id=SourceSelectHtmlIds.SELECTION_LIST,
+        item_selector="li.queue-item",
+        navigation=LinearVertical(),
+        zone_focus_classes=(str(ring(1)), str(ring_dui.secondary)),
+    )
+
+    actions = (
+        # Enter activates the file browser child when ghost-browser zone is active
+        KeyAction(
+            key="Enter",
+            js_callback="activateBrowserChild",
+            zone_ids=(SourceSelectHtmlIds.GHOST_BROWSER,),
+            description="Activate browser",
+            hint_group="Navigation",
+        ),
+
+        # Ctrl+A toggles all media in current directory
+        KeyAction(
+            key="a",
+            modifiers=frozenset({"ctrl"}),
+            htmx_trigger=SourceSelectHtmlIds.TOGGLE_ALL_BTN,
+            description="Toggle all media in folder",
+            hint_group="Selection",
+        ),
+    )
+
+    return ZoneManager(
+        zones=(ghost_browser_zone, queue_zone),
+        actions=actions,
+        system_id=SourceSelectHtmlIds.PARENT_SYSTEM_ID,
+        prev_zone_key="ArrowLeft",
+        next_zone_key="ArrowRight",
+        state_hidden_inputs=True,
+    )
+
+
+def _generate_hierarchy_js() -> Script:  # Script element with hierarchy wiring
+    """Generate JavaScript for keyboard system hierarchy and child activation."""
+    parent_id = SourceSelectHtmlIds.PARENT_SYSTEM_ID
+    fb_id = SourceSelectHtmlIds.FB_SYSTEM_ID
+
+    return Script(f"""
+    (function() {{
+        const coord = window.kbCoordinator;
+        if (!coord) return;
+
+        const PARENT_ID = '{parent_id}';
+        const FB_ID = '{fb_id}';
+
+        // Establish hierarchy: file browser is child of parent
+        if (coord._systems[FB_ID]) coord.setParent(FB_ID, PARENT_ID);
+
+        // Activate browser child when Enter pressed on ghost-browser zone
+        window.activateBrowserChild = function(item, index, zoneId, mode) {{
+            if (coord._systems[FB_ID]) {{
+                coord.setActiveChild(PARENT_ID, FB_ID);
+            }}
+        }};
+
+        // Auto-activate file browser on load
+        if (coord._systems[FB_ID]) {{
+            coord.setActiveChild(PARENT_ID, FB_ID);
+        }}
+    }})();
+    """)
+
 
 def render_source_select_step(
     selected_files: List[SelectedFile],  # Ordered selection
@@ -57,14 +144,33 @@ def render_source_select_step(
     preview_panel = render_preview_panel(media_src_url=urls.media_src)
     stats_panel = render_stats_panel(selected_files, urls, extraction_results, verified)
 
+    # Keyboard system
+    kb_manager = _create_parent_keyboard_manager(urls)
+
+    url_map = {
+        SourceSelectHtmlIds.TOGGLE_ALL_BTN: urls.toggle_all,
+    }
+    target_map = {bid: f"#{SourceSelectHtmlIds.SELECTION_PANEL}" for bid in url_map}
+    swap_map = {bid: "none" for bid in url_map}
+
+    kb_system = render_keyboard_system(
+        kb_manager,
+        url_map=url_map,
+        target_map=target_map,
+        swap_map=swap_map,
+        show_hints=False,
+        include_state_inputs=True,
+    )
+
     return Div(
         # Two-column layout (browser left, selection right)
-        # Height fitted to remaining viewport space via cjm-fasthtml-viewport-fit
         Div(
-            Div(browser_panel, cls=combine_classes(
-                w.full, h.full, overflow.hidden,
-                flex_display, flex_direction.col,
-            )),
+            Div(browser_panel,
+                id=SourceSelectHtmlIds.GHOST_BROWSER,
+                cls=combine_classes(
+                    w.full, h.full, overflow.hidden,
+                    flex_display, flex_direction.col,
+                )),
             Div(selection_panel, cls=combine_classes(w.full, overflow.y.auto)),
             id=SourceSelectHtmlIds.TWO_COL_GRID,
             cls=combine_classes(str(grid_display), grid_cols(1), grid_cols(2).lg, gap(4))
@@ -76,11 +182,17 @@ def render_source_select_step(
         # Stats / verify panel
         stats_panel,
 
+        # Keyboard system
+        kb_system.script,
+        kb_system.hidden_inputs,
+        kb_system.action_buttons,
+        _generate_hierarchy_js(),
+
         # SortableJS library + initialization
         Script(src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"),
         Script(generate_sortable_init_script()),
 
-        # Viewport fit script (fits two-column grid to remaining viewport)
+        # Viewport fit script
         render_viewport_fit_script(_VIEWPORT_FIT_CONFIG),
 
         # Script runner for OOB-triggered JS

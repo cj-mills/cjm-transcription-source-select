@@ -51,6 +51,7 @@ class SourceSelectUrls:
     remove: str = ""  # Remove file from selection
     reorder: str = ""  # Reorder selection (SortableJS)
     clear: str = ""  # Clear all selected files
+    toggle_all: str = ""  # Toggle all media in current directory
 
     # Preview
     preview: str = ""  # Preview a file (render player)

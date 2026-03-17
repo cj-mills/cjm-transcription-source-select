@@ -78,6 +78,7 @@ def init_source_select_routers(
     urls.remove = selection_routes["remove"].to()
     urls.reorder = selection_routes["reorder"].to()
     urls.clear = selection_routes["clear"].to()
+    urls.toggle_all = selection_routes["toggle_all"].to()
     urls.preview = preview_routes["preview"].to()
     urls.media_src = preview_routes["media_src"].to()
     urls.verify = verify_routes["verify"].to()
