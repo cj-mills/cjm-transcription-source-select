@@ -4,18 +4,23 @@
 
 # %% auto #0
 __all__ = ['AUDIO_FILTER_EXTENSIONS', 'VIDEO_FILTER_EXTENSIONS', 'MEDIA_FILTER_EXTENSIONS', 'create_media_browser_config',
-           'get_browser_state', 'sync_browser_selection', 'render_browser_panel', 'render_browser_listing']
+           'get_browser_state', 'sync_browser_selection', 'render_browser_panel']
 
 # %% ../../nbs/components/file_browser_panel.ipynb #c0bdd9e5
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 from pathlib import Path
 
+from fasthtml.common import Div
+
 from cjm_fasthtml_file_browser.core.config import (
-    FileBrowserConfig, FilterConfig, ViewConfig, SelectionMode, ViewMode, FileColumn
+    FileBrowserConfig, FilterConfig, ViewConfig, SelectionMode, FileColumn
 )
 from cjm_fasthtml_file_browser.core.models import BrowserState, BrowserSelection
 from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
-from cjm_fasthtml_file_browser.components.browser import render_file_browser, render_browser_content
+
+from cjm_fasthtml_tailwind.utilities.sizing import w, h, min_h
+from cjm_fasthtml_tailwind.utilities.flexbox_and_grid import flex_display, flex_direction, grow
+from cjm_fasthtml_tailwind.core.base import combine_classes
 
 from ..html_ids import SourceSelectHtmlIds
 
@@ -31,8 +36,6 @@ def create_media_browser_config() -> FileBrowserConfig:  # Configured for audio/
         selection_mode=SelectionMode.MULTIPLE,
         selectable_types="both",
         view=ViewConfig(
-            default_mode=ViewMode.LIST,
-            allow_mode_toggle=False,
             columns=[FileColumn.NAME, FileColumn.SIZE, FileColumn.MODIFIED],
             sort_folders_first=True,
         ),
@@ -43,10 +46,9 @@ def create_media_browser_config() -> FileBrowserConfig:  # Configured for audio/
         ),
         show_path_bar=True,
         show_path_input=True,
-        show_toolbar=True,
-        show_parent_navigation=False,
         container_id=SourceSelectHtmlIds.BROWSER_PANEL,
         content_id=SourceSelectHtmlIds.BROWSER_FILE_LIST,
+        vc_prefix="tss_fb",
     )
 
 # %% ../../nbs/components/file_browser_panel.ipynb #5af642b7
@@ -74,50 +76,14 @@ def sync_browser_selection(
 
 # %% ../../nbs/components/file_browser_panel.ipynb #59b341a9
 def render_browser_panel(
-    browser_state: BrowserState,  # Current browser state
-    config: FileBrowserConfig,  # Browser configuration
-    provider: LocalFileSystemProvider,  # File system provider
-    navigate_url: str,  # URL for directory navigation
-    select_url: str,  # URL for file selection toggle
-    home_path: str = "",  # Home directory for nav buttons
-    toggle_view_url: str = "",  # URL for view mode toggle
-    change_sort_url: str = "",  # URL for sort column/direction change
-) -> Any:  # Rendered file browser component
-    """Render the file browser panel using the library's built-in UI."""
-    listing = provider.list_directory(browser_state.current_path)
-    hx_target = SourceSelectHtmlIds.as_selector(SourceSelectHtmlIds.BROWSER_PANEL)
-
-    return render_file_browser(
-        listing=listing,
-        config=config,
-        state=browser_state,
-        navigate_url=navigate_url,
-        select_url=select_url,
-        toggle_view_url=toggle_view_url,
-        change_sort_url=change_sort_url,
-        refresh_url=navigate_url,
-        path_input_url=navigate_url,
-        home_path=home_path or str(Path.home()),
-        hx_target=hx_target,
-    )
-
-# %% ../../nbs/components/file_browser_panel.ipynb #i6soa18t72
-def render_browser_listing(
-    browser_state: BrowserState,  # Current browser state
-    config: FileBrowserConfig,  # Browser configuration
-    provider: LocalFileSystemProvider,  # File system provider
-    navigate_url: str,  # URL for directory navigation
-    select_url: str,  # URL for file selection toggle
-) -> Any:  # Rendered listing content (no container wrapper)
-    """Render just the browser listing for select operations (preserves scroll)."""
-    listing = provider.list_directory(browser_state.current_path)
-    hx_target = SourceSelectHtmlIds.as_selector(SourceSelectHtmlIds.BROWSER_PANEL)
-
-    return render_browser_content(
-        listing=listing,
-        config=config,
-        state=browser_state,
-        navigate_url=navigate_url,
-        select_url=select_url,
-        hx_target=hx_target,
+    render_fn: Callable,  # FileBrowserRouters.render callable
+) -> Any:  # Rendered file browser in a flex container
+    """Render the file browser panel using the library's self-contained VC component."""
+    return Div(
+        render_fn(),
+        id=SourceSelectHtmlIds.BROWSER_PANEL,
+        cls=combine_classes(
+            w.full, min_h(0),
+            flex_display, flex_direction.col, grow(),
+        ),
     )

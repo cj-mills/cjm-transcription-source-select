@@ -6,17 +6,13 @@
 __all__ = ['init_browser_router']
 
 # %% ../../nbs/routes/browser.ipynb #3ea0a085
-from typing import Dict, Any, List, Tuple, Callable
+from typing import Dict, Any, List, Tuple, Callable, Optional
 from pathlib import Path
 
-from fasthtml.common import APIRouter
-
-from cjm_fasthtml_file_browser.core.config import FileBrowserConfig
+from cjm_fasthtml_file_browser.core.config import FileBrowserConfig, FileBrowserCallbacks
+from cjm_fasthtml_file_browser.core.models import BrowserState
 from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
-from cjm_fasthtml_file_browser.routes.handlers import (
-    _handle_toggle_view as _fb_handle_toggle_view,
-    _handle_change_sort as _fb_handle_change_sort,
-)
+from cjm_fasthtml_file_browser.routes.handlers import init_router as init_fb_router, FileBrowserRouters
 from cjm_workflow_state.state_store import SQLiteWorkflowStateStore
 
 from ..models import SourceSelectUrls, SelectedFile
@@ -25,58 +21,12 @@ from cjm_transcription_source_select.routes.core import (
     get_step_state, update_step_state, get_session_id_from_sess
 )
 from cjm_transcription_source_select.components.file_browser_panel import (
-    get_browser_state, sync_browser_selection, render_browser_panel, render_browser_listing
+    get_browser_state, sync_browser_selection,
 )
 from ..components.selection_panel import render_selection_panel
 from ..components.stats_panel import render_stats_panel
 
 # %% ../../nbs/routes/browser.ipynb #9d4cc280
-def _handle_navigate(
-    state_store: SQLiteWorkflowStateStore,  # Workflow state store
-    provider: LocalFileSystemProvider,  # File system provider
-    config: FileBrowserConfig,  # Browser configuration
-    workflow_id: str,  # Workflow identifier
-    home_path: str,  # Home directory path
-    urls: SourceSelectUrls,  # URL bundle
-    sess,  # FastHTML session
-    path: str,  # Directory path to navigate to
-):  # Rendered browser panel
-    """Navigate to a directory and re-render the browser panel."""
-    session_id = get_session_id_from_sess(sess)
-    step_state = get_step_state(state_store, workflow_id, session_id)
-    browser_state = get_browser_state(step_state, home_path)
-
-    # Validate path
-    valid, _ = provider.is_valid_path(path)
-    if valid and provider.is_directory(path):
-        browser_state.current_path = provider.normalize_path(path)
-    else:
-        browser_state.current_path = step_state.get("current_directory", home_path)
-
-    # Sync selection with selected_files and selected_folders
-    selected_files = step_state.get("selected_files", [])
-    selected_folders = step_state.get("selected_folders", [])
-    sync_browser_selection(browser_state, selected_files, selected_folders)
-
-    # Save state
-    update_step_state(
-        state_store, workflow_id, session_id,
-        current_directory=browser_state.current_path,
-        browser_state=browser_state.to_dict(),
-    )
-
-    return render_browser_panel(
-        browser_state=browser_state,
-        config=config,
-        provider=provider,
-        navigate_url=urls.navigate,
-        select_url=urls.select,
-        home_path=home_path,
-        toggle_view_url=urls.toggle_view,
-        change_sort_url=urls.change_sort,
-    )
-
-# %% ../../nbs/routes/browser.ipynb #a5x4ide6vmb
 def _list_media_in_folder(
     folder_path: str,  # Directory to scan for media files
 ) -> List[SelectedFile]:  # Media files found as SelectedFile dicts
@@ -99,198 +49,176 @@ def _list_media_in_folder(
                 ))
     return results
 
-# %% ../../nbs/routes/browser.ipynb #e2c1c0d5
-def _handle_select(
-    state_store: SQLiteWorkflowStateStore,  # Workflow state store
-    provider: LocalFileSystemProvider,  # File system provider
-    config: FileBrowserConfig,  # Browser configuration
-    workflow_id: str,  # Workflow identifier
-    home_path: str,  # Home directory path
-    urls: SourceSelectUrls,  # URL bundle
-    sess,  # FastHTML session
-    path: str,  # File or folder path to toggle
-):  # (browser listing, OOB selection panel, OOB stats panel)
-    """Toggle a file or folder in/out of the selected files list."""
-    session_id = get_session_id_from_sess(sess)
-    step_state = get_step_state(state_store, workflow_id, session_id)
-    browser_state = get_browser_state(step_state, home_path)
-    selected_files = step_state.get("selected_files", [])
-    selected_folders = step_state.get("selected_folders", [])
-    extraction_results = step_state.get("extraction_results", {})
-
+# %% ../../nbs/routes/browser.ipynb #a5x4ide6vmb
+def _toggle_file(
+    path: str,  # File path to toggle
+    selected_files: List[Dict[str, Any]],  # Current selection (mutated)
+    selected_folders: List[str],  # Current folder selections (mutated)
+    extraction_results: Dict[str, Any],  # Extraction results (mutated)
+) -> None:  # Mutates lists in place
+    """Toggle a single file in/out of the selection."""
     target = Path(path)
+    existing_paths = {f["path"] for f in selected_files}
 
-    if target.is_dir():
-        # Folder toggle: bulk add/remove all media files in directory
-        if path in selected_folders:
-            # Remove all files from this folder and deselect it
-            folder_file_paths = {str(child) for child in target.iterdir()
-                                 if child.is_file() and is_media_file(str(child))}
-            selected_files = [f for f in selected_files if f["path"] not in folder_file_paths]
-            for fp in folder_file_paths:
-                extraction_results.pop(fp, None)
-            selected_folders = [f for f in selected_folders if f != path]
-        else:
-            # Add media files not already selected; skip folders with no media files
-            all_media = _list_media_in_folder(path)
-            if all_media:
-                existing_paths = {f["path"] for f in selected_files}
-                new_files = [f for f in all_media if f["path"] not in existing_paths]
-                selected_files.extend(new_files)
-                selected_folders.append(path)
+    if path in existing_paths:
+        selected_files[:] = [f for f in selected_files if f["path"] != path]
+        extraction_results.pop(path, None)
+        # Auto-deselect parent folder if no files from it remain
+        parent = str(target.parent)
+        if parent in selected_folders:
+            remaining = {f["path"] for f in selected_files}
+            has_sibling = any(str(Path(p).parent) == parent for p in remaining)
+            if not has_sibling:
+                selected_folders[:] = [f for f in selected_folders if f != parent]
     else:
-        # Single file toggle (existing behavior)
-        existing_paths = {f["path"] for f in selected_files}
-        if path in existing_paths:
-            selected_files = [f for f in selected_files if f["path"] != path]
-            extraction_results.pop(path, None)
-            # Auto-deselect parent folder if no files from it remain
-            parent = str(target.parent)
-            if parent in selected_folders:
-                remaining = {f["path"] for f in selected_files}
-                has_sibling = any(str(Path(p).parent) == parent for p in remaining)
-                if not has_sibling:
-                    selected_folders = [f for f in selected_folders if f != parent]
-        else:
-            file_type = detect_file_type(path)
-            if file_type and target.exists():
-                selected_files.append(SelectedFile(
-                    path=path,
-                    filename=target.name,
-                    file_type=file_type,
-                    size_bytes=target.stat().st_size,
-                    duration=None,
-                    format=target.suffix.lstrip("."),
-                ))
+        file_type = detect_file_type(path)
+        if file_type and target.exists():
+            selected_files.append(SelectedFile(
+                path=path,
+                filename=target.name,
+                file_type=file_type,
+                size_bytes=target.stat().st_size,
+                duration=None,
+                format=target.suffix.lstrip("."),
+            ))
 
-    # Sync browser selection with updated lists
-    sync_browser_selection(browser_state, selected_files, selected_folders)
 
-    # Clear verified state when selection changes
-    update_step_state(
-        state_store, workflow_id, session_id,
-        selected_files=selected_files,
-        selected_folders=selected_folders,
-        extraction_results=extraction_results,
-        verified=False,
-        committed_audio_paths=[],
-        browser_state=browser_state.to_dict(),
-    )
+def _toggle_folder(
+    path: str,  # Folder path to toggle
+    selected_files: List[Dict[str, Any]],  # Current selection (mutated)
+    selected_folders: List[str],  # Current folder selections (mutated)
+    extraction_results: Dict[str, Any],  # Extraction results (mutated)
+) -> None:  # Mutates lists in place
+    """Toggle all media files in a folder (shallow bulk-select)."""
+    target = Path(path)
+    if path in selected_folders:
+        # Remove all files from this folder and deselect it
+        folder_file_paths = {str(child) for child in target.iterdir()
+                             if child.is_file() and is_media_file(str(child))}
+        selected_files[:] = [f for f in selected_files if f["path"] not in folder_file_paths]
+        for fp in folder_file_paths:
+            extraction_results.pop(fp, None)
+        selected_folders[:] = [f for f in selected_folders if f != path]
+    else:
+        # Add media files not already selected
+        all_media = _list_media_in_folder(path)
+        if all_media:
+            existing_paths = {f["path"] for f in selected_files}
+            new_files = [f for f in all_media if f["path"] not in existing_paths]
+            selected_files.extend(new_files)
+            selected_folders.append(path)
 
-    # Primary swap: listing content only (innerHTML on content wrapper preserves scroll)
-    listing = render_browser_listing(
-        browser_state=browser_state,
-        config=config,
-        provider=provider,
-        navigate_url=urls.navigate,
-        select_url=urls.select,
-    )
-
-    # OOB swap: selection panel
-    selection = render_selection_panel(selected_files, urls, extraction_results)
-    selection.attrs["hx-swap-oob"] = "outerHTML"
-
-    # OOB swap: stats panel
-    stats = render_stats_panel(selected_files, urls, extraction_results, verified=False)
-    stats.attrs["hx-swap-oob"] = "outerHTML"
-
-    return listing, selection, stats
-
-# %% ../../nbs/routes/browser.ipynb #9220ffe5
+# %% ../../nbs/routes/browser.ipynb #e2c1c0d5
 def init_browser_router(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
     provider: LocalFileSystemProvider,  # File system provider
     config: FileBrowserConfig,  # Browser configuration
     workflow_id: str,  # Workflow identifier
-    urls: SourceSelectUrls,  # Mutable URL bundle (populated after router init)
+    urls: SourceSelectUrls,  # Mutable URL bundle (for OOB rendering)
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/browser",  # Route prefix
-) -> Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)
-    """Initialize the file browser router with navigate, select, toggle_view, and change_sort handlers."""
-    router = APIRouter(prefix=prefix)
+) -> Tuple[FileBrowserRouters, Callable]:  # (fb_routers, render_panel_fn)
+    """Initialize the file browser with selection callbacks."""
     _home = home_path or provider.get_home_path()
 
-    def _make_state_getter(sess):
-        """Create a state_getter callback for file browser handler delegation."""
+    # --- File browser state management ---
+    _browser_state = BrowserState(current_path=_home)
+
+    def _fb_state_getter() -> BrowserState:
+        """Get browser state with selection synced from step state."""
+        return _browser_state
+
+    def _fb_state_setter(state: BrowserState) -> None:
+        """Save browser navigation/sort state."""
+        _browser_state.current_path = state.current_path
+        _browser_state.sort_by = state.sort_by
+        _browser_state.sort_descending = state.sort_descending
+        _browser_state.selection = state.selection
+
+    # --- Selection change callback (receives request for session access) ---
+    def _on_selection_change(selected_paths: List[str], request=None) -> Tuple:
+        """Handle selection changes from file browser checkboxes."""
+        if request is None:
+            return ()
+
+        sess = request.session
         session_id = get_session_id_from_sess(sess)
         step_state = get_step_state(state_store, workflow_id, session_id)
-        browser_state = get_browser_state(step_state, _home)
-        # Sync selection highlights
         selected_files = step_state.get("selected_files", [])
         selected_folders = step_state.get("selected_folders", [])
-        sync_browser_selection(browser_state, selected_files, selected_folders)
-        return lambda: browser_state
+        extraction_results = step_state.get("extraction_results", {})
 
-    def _make_state_setter(sess):
-        """Create a state_setter callback for file browser handler delegation."""
-        session_id = get_session_id_from_sess(sess)
-        def setter(browser_state):
-            update_step_state(
-                state_store, workflow_id, session_id,
-                browser_state=browser_state.to_dict(),
-            )
-        return setter
+        # Build old_paths from both files and folders
+        old_paths = {f["path"] for f in selected_files}
+        old_paths.update(selected_folders)
+        new_paths = set(selected_paths)
 
-    def _make_render_fn():
-        """Create a render_fn callback for file browser handler delegation."""
-        def render_fn(browser_state):
-            return render_browser_panel(
-                browser_state=browser_state,
-                config=config,
-                provider=provider,
-                navigate_url=urls.navigate,
-                select_url=urls.select,
-                home_path=_home,
-                toggle_view_url=urls.toggle_view,
-                change_sort_url=urls.change_sort,
-            )
-        return render_fn
+        # Find added and removed paths
+        added = new_paths - old_paths
+        removed = old_paths - new_paths
 
-    @router
-    def navigate(sess, path: str = ""):
-        """Navigate to a directory."""
-        target = path or _home
-        return _handle_navigate(
-            state_store, provider, config, workflow_id, _home, urls,
-            sess, target,
+        # Check folder paths
+        old_folder_set = set(selected_folders)
+        added_folders = {p for p in added if Path(p).is_dir()}
+        removed_folders = {p for p in removed if p in old_folder_set}
+        added_files = added - added_folders
+        removed_files = removed - removed_folders
+
+        # Process removals
+        for path in removed_files:
+            _toggle_file(path, selected_files, selected_folders, extraction_results)
+        for path in removed_folders:
+            _toggle_folder(path, selected_files, selected_folders, extraction_results)
+
+        # Process additions
+        for path in added_files:
+            if path not in {f["path"] for f in selected_files}:
+                _toggle_file(path, selected_files, selected_folders, extraction_results)
+        for path in added_folders:
+            if path not in selected_folders:
+                _toggle_folder(path, selected_files, selected_folders, extraction_results)
+
+        # Persist to step state
+        update_step_state(
+            state_store, workflow_id, session_id,
+            selected_files=selected_files,
+            selected_folders=selected_folders,
+            extraction_results=extraction_results,
+            verified=False,
+            committed_audio_paths=[],
         )
 
-    @router
-    def select(sess, path: str = ""):
-        """Toggle a file in/out of the selection."""
-        if not path:
-            return navigate(sess)
-        return _handle_select(
-            state_store, provider, config, workflow_id, _home, urls,
-            sess, path,
-        )
+        # Sync browser selection display
+        sync_browser_selection(_browser_state, selected_files, selected_folders)
 
-    @router
-    def toggle_view(sess, view_mode: str = "list"):
-        """Toggle between list and grid view."""
-        return _fb_handle_toggle_view(
-            state_getter=_make_state_getter(sess),
-            state_setter=_make_state_setter(sess),
-            view_mode=view_mode,
-            render_fn=_make_render_fn(),
-        )
+        # OOB updates for selection and stats panels
+        selection_oob = render_selection_panel(selected_files, urls, extraction_results)
+        selection_oob.attrs["hx-swap-oob"] = "outerHTML"
+        stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
+        stats_oob.attrs["hx-swap-oob"] = "outerHTML"
+        return (selection_oob, stats_oob)
 
-    @router
-    def change_sort(sess, sort_by: str = "name", sort_descending: str = "false"):
-        """Change the sort column and direction."""
-        return _fb_handle_change_sort(
-            state_getter=_make_state_getter(sess),
-            state_setter=_make_state_setter(sess),
-            sort_by=sort_by,
-            sort_descending=sort_descending,
-            render_fn=_make_render_fn(),
-        )
+    fb_callbacks = FileBrowserCallbacks(
+        on_selection_change=_on_selection_change,
+    )
 
-    routes = {
-        "navigate": navigate,
-        "select": select,
-        "toggle_view": toggle_view,
-        "change_sort": change_sort,
-    }
+    fb_routers = init_fb_router(
+        config=config,
+        provider=provider,
+        state_getter=_fb_state_getter,
+        state_setter=_fb_state_setter,
+        route_prefix=prefix,
+        callbacks=fb_callbacks,
+        home_path=_home,
+    )
 
-    return router, routes
+    # --- Panel render function ---
+    def _render_panel() -> Any:
+        """Render the complete browser panel for initial page load."""
+        from cjm_transcription_source_select.components.file_browser_panel import render_browser_panel
+        return render_browser_panel(render_fn=fb_routers.render)
+
+    # --- Attach accessors for external use (selection routes) ---
+    fb_routers._fb_state_getter = _fb_state_getter
+
+    return fb_routers, _render_panel

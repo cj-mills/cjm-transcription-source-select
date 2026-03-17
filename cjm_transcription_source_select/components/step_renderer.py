@@ -6,14 +6,9 @@
 __all__ = ['render_source_select_step']
 
 # %% ../../nbs/components/step_renderer.ipynb #d4e5f6a7
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from fasthtml.common import Div, H2, P, Script
-
-from cjm_fasthtml_file_browser.core.config import FileBrowserConfig
-from cjm_fasthtml_file_browser.core.models import BrowserState
-from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
-from cjm_fasthtml_file_browser.components.browser import generate_scroll_preservation_script
 
 from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui
 
@@ -33,9 +28,6 @@ from cjm_transcription_source_select.models import (
     SourceSelectUrls, SelectedFile, ExtractionResult
 )
 from ..html_ids import SourceSelectHtmlIds
-from cjm_transcription_source_select.components.file_browser_panel import (
-    get_browser_state, sync_browser_selection, render_browser_panel
-)
 from .selection_panel import render_selection_panel
 from .preview_panel import render_preview_panel
 from .stats_panel import render_stats_panel
@@ -53,32 +45,10 @@ def render_source_select_step(
     extraction_results: Dict[str, ExtractionResult],  # video_path -> result
     verified: bool,  # Whether selection is verified
     urls: SourceSelectUrls,  # URL bundle
-    provider: LocalFileSystemProvider,  # File system provider
-    browser_config: FileBrowserConfig,  # Browser configuration
-    home_path: str,  # Home directory path
-    browser_state: Optional[BrowserState] = None,  # Browser state (created if None)
-    start_path: str = "",  # Starting directory (used if no browser_state)
+    render_browser_panel_fn: Callable,  # Browser panel render function from init_browser_router
 ) -> Div:  # Complete step view
     """Render the complete source selection step."""
-    # Get or create browser state
-    if browser_state is None:
-        browser_state = BrowserState(current_path=start_path or home_path)
-
-    # Sync browser selection highlights
-    sync_browser_selection(browser_state, selected_files)
-
-    # Render panels
-    browser_panel = render_browser_panel(
-        browser_state=browser_state,
-        config=browser_config,
-        provider=provider,
-        navigate_url=urls.navigate,
-        select_url=urls.select,
-        home_path=home_path,
-        toggle_view_url=urls.toggle_view,
-        change_sort_url=urls.change_sort,
-    )
-
+    browser_panel = render_browser_panel_fn()
     selection_panel = render_selection_panel(selected_files, urls, extraction_results)
     preview_panel = render_preview_panel(media_src_url=urls.media_src)
     stats_panel = render_stats_panel(selected_files, urls, extraction_results, verified)
@@ -87,7 +57,10 @@ def render_source_select_step(
         # Two-column layout (browser left, selection right)
         # Height fitted to remaining viewport space via cjm-fasthtml-viewport-fit
         Div(
-            Div(browser_panel, cls=combine_classes(w.full, overflow.y.auto)),
+            Div(browser_panel, cls=combine_classes(
+                w.full, h.full, overflow.hidden,
+                flex_display, flex_direction.col,
+            )),
             Div(selection_panel, cls=combine_classes(w.full, overflow.y.auto)),
             id=SourceSelectHtmlIds.TWO_COL_GRID,
             cls=combine_classes(str(grid_display), grid_cols(1), grid_cols(2).lg, gap(4))
@@ -102,9 +75,6 @@ def render_source_select_step(
         # SortableJS library + initialization
         Script(src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"),
         Script(generate_sortable_init_script()),
-
-        # Scroll preservation for file browser select operations
-        Script(generate_scroll_preservation_script(browser_config.content_id)),
 
         # Viewport fit script (fits two-column grid to remaining viewport)
         render_viewport_fit_script(_VIEWPORT_FIT_CONFIG),

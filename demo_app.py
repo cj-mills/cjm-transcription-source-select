@@ -49,9 +49,7 @@ def main():
     from cjm_transcription_source_select.routes.core import get_step_state, get_session_id_from_sess
     from cjm_transcription_source_select.routes.init import init_source_select_routers
     from cjm_transcription_source_select.services.source_select import SourceSelectService
-    from cjm_transcription_source_select.components.file_browser_panel import (
-        create_media_browser_config, get_browser_state,
-    )
+    from cjm_transcription_source_select.components.file_browser_panel import create_media_browser_config
     from cjm_transcription_source_select.components.step_renderer import render_source_select_step
 
     print("\n" + "=" * 70)
@@ -108,7 +106,7 @@ def main():
     # Initialize routes via unified assembly
     # -------------------------------------------------------------------------
 
-    routers, urls, routes = init_source_select_routers(
+    routers, urls, render_panel_fn = init_source_select_routers(
         state_store=state_store,
         provider=provider,
         browser_config=browser_config,
@@ -118,9 +116,7 @@ def main():
         prefix="",
     )
 
-    print(f"  Routes initialized ({len(routes)} handlers)")
-    for name, route_fn in routes.items():
-        print(f"    {name}: {route_fn.to()}")
+    print(f"  Routers initialized ({len(routers)} routers)")
 
     # -------------------------------------------------------------------------
     # Page routes
@@ -174,7 +170,6 @@ def main():
             session_id = get_session_id_from_sess(sess)
             step_state = get_step_state(state_store, workflow_id, session_id)
 
-            browser_state = get_browser_state(step_state, start_path)
             selected_files = step_state.get("selected_files", [])
             extraction_results = step_state.get("extraction_results", {})
             verified = step_state.get("verified", False)
@@ -184,11 +179,7 @@ def main():
                 extraction_results=extraction_results,
                 verified=verified,
                 urls=urls,
-                provider=provider,
-                browser_config=browser_config,
-                home_path=home_path,
-                browser_state=browser_state,
-                start_path=start_path,
+                render_browser_panel_fn=render_panel_fn,
             )
 
         return handle_htmx_request(

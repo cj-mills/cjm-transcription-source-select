@@ -6,13 +6,15 @@
 __all__ = ['DEBUG_REORDER', 'init_selection_router']
 
 # %% ../../nbs/routes/selection.ipynb #d9134d0d
-from typing import Dict, Tuple, Callable
+from typing import Any, Dict, Tuple, Callable
 from pathlib import Path
 
 from fasthtml.common import APIRouter
 
 from cjm_fasthtml_file_browser.core.config import FileBrowserConfig
+from cjm_fasthtml_file_browser.core.models import BrowserState
 from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
+from cjm_fasthtml_file_browser.routes.handlers import FileBrowserRouters
 from cjm_workflow_state.state_store import SQLiteWorkflowStateStore
 
 from ..models import SourceSelectUrls
@@ -29,48 +31,23 @@ DEBUG_REORDER = False
 
 # %% ../../nbs/routes/selection.ipynb #6faf1f42
 def _render_oob_browser(
-    state_store: SQLiteWorkflowStateStore,  # Workflow state store
-    provider: LocalFileSystemProvider,  # File system provider
-    config: FileBrowserConfig,  # Browser configuration
-    workflow_id: str,  # Workflow identifier
-    home_path: str,  # Home directory path
-    urls: SourceSelectUrls,  # URL bundle
-    session_id: str,  # Session identifier
+    fb_routers: FileBrowserRouters,  # File browser routers (has render + selection refs)
     selected_files: list,  # Current selected files
     selected_folders: list = None,  # Current selected folders
-):  # Browser panel with OOB attribute set
+) -> Any:  # Browser panel with OOB attribute set
     """Render browser panel as OOB swap to update selection highlights."""
-    step_state = get_step_state(state_store, workflow_id, session_id)
-    browser_state = get_browser_state(step_state, home_path)
-    sync_browser_selection(browser_state, selected_files, selected_folders)
-
-    # Save updated browser state
-    update_step_state(
-        state_store, workflow_id, session_id,
-        browser_state=browser_state.to_dict(),
-    )
-
-    browser = render_browser_panel(
-        browser_state=browser_state,
-        config=config,
-        provider=provider,
-        navigate_url=urls.navigate,
-        select_url=urls.select,
-        home_path=home_path,
-        toggle_view_url=urls.toggle_view,
-        change_sort_url=urls.change_sort,
-    )
+    # Sync selection into file browser's closure state
+    sync_browser_selection(fb_routers._fb_state_getter(), selected_files, selected_folders)
+    browser = render_browser_panel(render_fn=fb_routers.render)
     browser.attrs["hx-swap-oob"] = "outerHTML"
     return browser
 
 # %% ../../nbs/routes/selection.ipynb #66ceacad
 def _handle_remove(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
-    provider: LocalFileSystemProvider,  # File system provider
-    config: FileBrowserConfig,  # Browser configuration
     workflow_id: str,  # Workflow identifier
-    home_path: str,  # Home directory path
     urls: SourceSelectUrls,  # URL bundle
+    fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
     path: str,  # File path to remove
 ):  # (selection panel, OOB browser panel, OOB stats panel)
@@ -79,8 +56,10 @@ def _handle_remove(
     step_state = get_step_state(state_store, workflow_id, session_id)
     selected_files = step_state.get("selected_files", [])
     selected_folders = step_state.get("selected_folders", [])
+    extraction_results = step_state.get("extraction_results", {})
 
     selected_files = [f for f in selected_files if f["path"] != path]
+    extraction_results.pop(path, None)
 
     # Auto-deselect parent folder if no files from it remain
     parent = str(Path(path).parent)
@@ -89,10 +68,6 @@ def _handle_remove(
         has_sibling = any(str(Path(p).parent) == parent for p in remaining)
         if not has_sibling:
             selected_folders = [f for f in selected_folders if f != parent]
-
-    # Clean up extraction result for the removed file
-    extraction_results = step_state.get("extraction_results", {})
-    extraction_results.pop(path, None)
 
     update_step_state(
         state_store, workflow_id, session_id,
@@ -103,11 +78,11 @@ def _handle_remove(
         committed_audio_paths=[],
     )
 
+    # Sync browser selection display
+    sync_browser_selection(fb_routers._fb_state_getter(), selected_files, selected_folders)
+
     selection = render_selection_panel(selected_files, urls, extraction_results)
-    browser_oob = _render_oob_browser(
-        state_store, provider, config, workflow_id, home_path, urls,
-        session_id, selected_files, selected_folders
-    )
+    browser_oob = _render_oob_browser(fb_routers, selected_files, selected_folders)
     stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
     stats_oob.attrs["hx-swap-oob"] = "outerHTML"
     return selection, browser_oob, stats_oob
@@ -136,10 +111,6 @@ async def _handle_reorder(
         print(f"  form_data.getlist('item'): {new_order_paths}")
         print(f"  len(new_order_paths): {len(new_order_paths)}")
         print(f"  len(selected_files): {len(selected_files)}")
-        print(f"  selected_files paths: {[f['path'] for f in selected_files]}")
-        # Dump raw body for inspection
-        body = await request.body()
-        print(f"  Raw body ({len(body)} bytes): {body[:500]}")
 
     # Rebuild list in new order
     path_to_file = {f["path"]: f for f in selected_files}
@@ -151,9 +122,6 @@ async def _handle_reorder(
         if f["path"] not in reordered_paths:
             reordered.append(f)
 
-    if DEBUG_REORDER:
-        print(f"  reordered paths: {[f['path'] for f in reordered]}")
-
     update_step_state(
         state_store, workflow_id, session_id,
         selected_files=reordered,
@@ -164,11 +132,9 @@ async def _handle_reorder(
 # %% ../../nbs/routes/selection.ipynb #0f839f65
 def _handle_clear(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
-    provider: LocalFileSystemProvider,  # File system provider
-    config: FileBrowserConfig,  # Browser configuration
     workflow_id: str,  # Workflow identifier
-    home_path: str,  # Home directory path
     urls: SourceSelectUrls,  # URL bundle
+    fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
 ):  # (selection panel, OOB browser panel, OOB stats panel)
     """Clear all selected files and folders."""
@@ -183,10 +149,11 @@ def _handle_clear(
         committed_audio_paths=[],
     )
 
+    # Sync browser selection display
+    sync_browser_selection(fb_routers._fb_state_getter(), [], [])
+
     selection = render_selection_panel([], urls)
-    browser_oob = _render_oob_browser(
-        state_store, provider, config, workflow_id, home_path, urls, session_id, []
-    )
+    browser_oob = _render_oob_browser(fb_routers, [], [])
     stats_oob = render_stats_panel([], urls)
     stats_oob.attrs["hx-swap-oob"] = "outerHTML"
     return selection, browser_oob, stats_oob
@@ -199,21 +166,20 @@ def init_selection_router(
     workflow_id: str,  # Workflow identifier
     urls: SourceSelectUrls,  # Mutable URL bundle
     home_path: str = "",  # Home directory path
+    fb_routers: FileBrowserRouters = None,  # File browser routers (for OOB sync)
     prefix: str = "/selection",  # Route prefix
 ) -> Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)
     """Initialize selection queue management routes."""
     router = APIRouter(prefix=prefix)
-    _home = home_path or str(Path.home())
 
     @router
     def remove(sess, path: str = ""):
         """Remove a file from the selection."""
         if not path:
-            return render_selection_panel(
-                get_step_state(state_store, workflow_id, get_session_id_from_sess(sess)).get("selected_files", []),
-                urls
-            )
-        return _handle_remove(state_store, provider, config, workflow_id, _home, urls, sess, path)
+            session_id = get_session_id_from_sess(sess)
+            step_state = get_step_state(state_store, workflow_id, session_id)
+            return render_selection_panel(step_state.get("selected_files", []), urls)
+        return _handle_remove(state_store, workflow_id, urls, fb_routers, sess, path)
 
     @router
     async def reorder(request, sess):
@@ -223,7 +189,7 @@ def init_selection_router(
     @router
     def clear(sess):
         """Clear all selected files."""
-        return _handle_clear(state_store, provider, config, workflow_id, _home, urls, sess)
+        return _handle_clear(state_store, workflow_id, urls, fb_routers, sess)
 
     routes = {
         "remove": remove,

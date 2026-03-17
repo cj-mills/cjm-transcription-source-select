@@ -47,21 +47,15 @@ class SourceSelectState(TypedDict, total=False):
 class SourceSelectUrls:
     """URL bundle for transcription source selection routes."""
 
-    # Browser operations
-    navigate: str = ""  # Navigate to directory
-    select: str = ""  # Toggle file selection (from file browser)
-    toggle_view: str = ""  # Toggle list/grid view mode
-    change_sort: str = ""  # Change sort column/direction
-
-    # Selection operations (Phase 3)
+    # Selection operations
     remove: str = ""  # Remove file from selection
     reorder: str = ""  # Reorder selection (SortableJS)
     clear: str = ""  # Clear all selected files
 
-    # Preview (Phase 4)
+    # Preview
     preview: str = ""  # Preview a file (render player)
     media_src: str = ""  # Serve a local media file for HTML5 players
 
-    # Verify (Phase 5)
+    # Verify
     verify: str = ""  # Verify selection + trigger extraction
     extraction_status: str = ""  # Poll extraction status

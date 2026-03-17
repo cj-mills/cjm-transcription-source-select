@@ -30,7 +30,7 @@ def init_source_select_routers(
     service: SourceSelectService,  # Source select service (FFmpeg plugin)
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/source_select",  # Base route prefix
-) -> Tuple[List[APIRouter], SourceSelectUrls, Dict[str, Callable]]:  # (routers, urls, routes)
+) -> Tuple[List[APIRouter], SourceSelectUrls, Callable]:  # (routers, urls, render_panel_fn)
     """Initialize all source selection routers and populate URL bundle."""
     _home = home_path or provider.get_home_path()
 
@@ -38,7 +38,7 @@ def init_source_select_routers(
     urls = SourceSelectUrls()
 
     # Phase 2: Initialize sub-routers
-    browser_router, browser_routes = init_browser_router(
+    fb_routers, render_panel_fn = init_browser_router(
         state_store=state_store,
         provider=provider,
         config=browser_config,
@@ -55,6 +55,7 @@ def init_source_select_routers(
         workflow_id=workflow_id,
         urls=urls,
         home_path=_home,
+        fb_routers=fb_routers,
         prefix=f"{prefix}/selection",
     )
 
@@ -74,10 +75,6 @@ def init_source_select_routers(
     )
 
     # Phase 3: Populate URL bundle
-    urls.navigate = browser_routes["navigate"].to()
-    urls.select = browser_routes["select"].to()
-    urls.toggle_view = browser_routes["toggle_view"].to()
-    urls.change_sort = browser_routes["change_sort"].to()
     urls.remove = selection_routes["remove"].to()
     urls.reorder = selection_routes["reorder"].to()
     urls.clear = selection_routes["clear"].to()
@@ -86,12 +83,6 @@ def init_source_select_routers(
     urls.verify = verify_routes["verify"].to()
 
     # Phase 4: Merge and return
-    merged_routes = {
-        **browser_routes,
-        **selection_routes,
-        **preview_routes,
-        **verify_routes,
-    }
-    routers = [browser_router, selection_router, preview_router, verify_router]
+    routers = [fb_routers.browser, fb_routers.collection, selection_router, preview_router, verify_router]
 
-    return routers, urls, merged_routes
+    return routers, urls, render_panel_fn

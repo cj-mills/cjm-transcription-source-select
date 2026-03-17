@@ -56,50 +56,49 @@ graph LR
     utils[utils<br/>utils]
 
     components_file_browser_panel --> html_ids
-    components_preview_panel --> html_ids
     components_preview_panel --> utils
     components_preview_panel --> models
+    components_preview_panel --> html_ids
     components_selection_panel --> models
-    components_selection_panel --> html_ids
     components_selection_panel --> utils
+    components_selection_panel --> html_ids
     components_stats_panel --> models
     components_stats_panel --> html_ids
+    components_step_renderer --> components_stats_panel
     components_step_renderer --> models
     components_step_renderer --> components_selection_panel
-    components_step_renderer --> html_ids
-    components_step_renderer --> components_stats_panel
-    components_step_renderer --> components_file_browser_panel
-    components_step_renderer --> components_helpers
     components_step_renderer --> components_preview_panel
-    routes_browser --> utils
-    routes_browser --> routes_core
-    routes_browser --> components_selection_panel
+    components_step_renderer --> components_helpers
+    components_step_renderer --> html_ids
     routes_browser --> components_stats_panel
-    routes_browser --> components_file_browser_panel
+    routes_browser --> utils
     routes_browser --> models
+    routes_browser --> components_selection_panel
+    routes_browser --> components_file_browser_panel
+    routes_browser --> routes_core
     routes_core --> models
-    routes_init --> routes_selection
-    routes_init --> routes_preview
     routes_init --> models
-    routes_init --> services_source_select
-    routes_init --> routes_verify
+    routes_init --> routes_selection
     routes_init --> routes_browser
-    routes_preview --> routes_core
+    routes_init --> routes_preview
+    routes_init --> routes_verify
+    routes_init --> services_source_select
     routes_preview --> models
+    routes_preview --> routes_core
     routes_preview --> components_preview_panel
-    routes_selection --> routes_core
-    routes_selection --> components_selection_panel
     routes_selection --> components_stats_panel
-    routes_selection --> components_file_browser_panel
     routes_selection --> models
-    routes_verify --> routes_core
-    routes_verify --> components_stats_panel
+    routes_selection --> components_selection_panel
+    routes_selection --> components_file_browser_panel
+    routes_selection --> routes_core
     routes_verify --> models
+    routes_verify --> components_stats_panel
+    routes_verify --> routes_core
     routes_verify --> components_selection_panel
     routes_verify --> services_source_select
 ```
 
-*42 cross-module dependencies detected*
+*41 cross-module dependencies detected*
 
 ## CLI Reference
 
@@ -124,20 +123,6 @@ from cjm_transcription_source_select.routes.browser import (
 #### Functions
 
 ``` python
-def _handle_navigate(
-    state_store: SQLiteWorkflowStateStore,  # Workflow state store
-    provider: LocalFileSystemProvider,  # File system provider
-    config: FileBrowserConfig,  # Browser configuration
-    workflow_id: str,  # Workflow identifier
-    home_path: str,  # Home directory path
-    urls: SourceSelectUrls,  # URL bundle
-    sess,  # FastHTML session
-    path: str,  # Directory path to navigate to
-):  # Rendered browser panel
-    "Navigate to a directory and re-render the browser panel."
-```
-
-``` python
 def _list_media_in_folder(
     folder_path: str,  # Directory to scan for media files
 ) -> List[SelectedFile]:  # Media files found as SelectedFile dicts
@@ -145,17 +130,23 @@ def _list_media_in_folder(
 ```
 
 ``` python
-def _handle_select(
-    state_store: SQLiteWorkflowStateStore,  # Workflow state store
-    provider: LocalFileSystemProvider,  # File system provider
-    config: FileBrowserConfig,  # Browser configuration
-    workflow_id: str,  # Workflow identifier
-    home_path: str,  # Home directory path
-    urls: SourceSelectUrls,  # URL bundle
-    sess,  # FastHTML session
-    path: str,  # File or folder path to toggle
-):  # (browser listing, OOB selection panel, OOB stats panel)
-    "Toggle a file or folder in/out of the selected files list."
+def _toggle_file(
+    path: str,  # File path to toggle
+    selected_files: List[Dict[str, Any]],  # Current selection (mutated)
+    selected_folders: List[str],  # Current folder selections (mutated)
+    extraction_results: Dict[str, Any],  # Extraction results (mutated)
+) -> None:  # Mutates lists in place
+    "Toggle a single file in/out of the selection."
+```
+
+``` python
+def _toggle_folder(
+    path: str,  # Folder path to toggle
+    selected_files: List[Dict[str, Any]],  # Current selection (mutated)
+    selected_folders: List[str],  # Current folder selections (mutated)
+    extraction_results: Dict[str, Any],  # Extraction results (mutated)
+) -> None:  # Mutates lists in place
+    "Toggle all media files in a folder (shallow bulk-select)."
 ```
 
 ``` python
@@ -164,11 +155,11 @@ def init_browser_router(
     provider: LocalFileSystemProvider,  # File system provider
     config: FileBrowserConfig,  # Browser configuration
     workflow_id: str,  # Workflow identifier
-    urls: SourceSelectUrls,  # Mutable URL bundle (populated after router init)
+    urls: SourceSelectUrls,  # Mutable URL bundle (for OOB rendering)
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/browser",  # Route prefix
-) -> Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)
-    "Initialize the file browser router with navigate, select, toggle_view, and change_sort handlers."
+) -> Tuple[FileBrowserRouters, Callable]:  # (fb_routers, render_panel_fn)
+    "Initialize the file browser with selection callbacks."
 ```
 
 ### routes/core (`core.ipynb`)
@@ -235,8 +226,7 @@ from cjm_transcription_source_select.components.file_browser_panel import (
     create_media_browser_config,
     get_browser_state,
     sync_browser_selection,
-    render_browser_panel,
-    render_browser_listing
+    render_browser_panel
 )
 ```
 
@@ -266,27 +256,9 @@ def sync_browser_selection(
 
 ``` python
 def render_browser_panel(
-    browser_state: BrowserState,  # Current browser state
-    config: FileBrowserConfig,  # Browser configuration
-    provider: LocalFileSystemProvider,  # File system provider
-    navigate_url: str,  # URL for directory navigation
-    select_url: str,  # URL for file selection toggle
-    home_path: str = "",  # Home directory for nav buttons
-    toggle_view_url: str = "",  # URL for view mode toggle
-    change_sort_url: str = "",  # URL for sort column/direction change
-) -> Any:  # Rendered file browser component
-    "Render the file browser panel using the library's built-in UI."
-```
-
-``` python
-def render_browser_listing(
-    browser_state: BrowserState,  # Current browser state
-    config: FileBrowserConfig,  # Browser configuration
-    provider: LocalFileSystemProvider,  # File system provider
-    navigate_url: str,  # URL for directory navigation
-    select_url: str,  # URL for file selection toggle
-) -> Any:  # Rendered listing content (no container wrapper)
-    "Render just the browser listing for select operations (preserves scroll)."
+    render_fn: Callable,  # FileBrowserRouters.render callable
+) -> Any:  # Rendered file browser in a flex container
+    "Render the file browser panel using the library's self-contained VC component."
 ```
 
 #### Variables
@@ -383,7 +355,7 @@ def init_source_select_routers(
     service: SourceSelectService,  # Source select service (FFmpeg plugin)
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/source_select",  # Base route prefix
-) -> Tuple[List[APIRouter], SourceSelectUrls, Dict[str, Callable]]:  # (routers, urls, routes)
+) -> Tuple[List[APIRouter], SourceSelectUrls, Callable]:  # (routers, urls, render_panel_fn)
     "Initialize all source selection routers and populate URL bundle."
 ```
 
@@ -425,10 +397,6 @@ class SourceSelectState(TypedDict):
 class SourceSelectUrls:
     "URL bundle for transcription source selection routes."
     
-    navigate: str = ''  # Navigate to directory
-    select: str = ''  # Toggle file selection (from file browser)
-    toggle_view: str = ''  # Toggle list/grid view mode
-    change_sort: str = ''  # Change sort column/direction
     remove: str = ''  # Remove file from selection
     reorder: str = ''  # Reorder selection (SortableJS)
     clear: str = ''  # Clear all selected files
@@ -535,27 +503,19 @@ from cjm_transcription_source_select.routes.selection import (
 
 ``` python
 def _render_oob_browser(
-    state_store: SQLiteWorkflowStateStore,  # Workflow state store
-    provider: LocalFileSystemProvider,  # File system provider
-    config: FileBrowserConfig,  # Browser configuration
-    workflow_id: str,  # Workflow identifier
-    home_path: str,  # Home directory path
-    urls: SourceSelectUrls,  # URL bundle
-    session_id: str,  # Session identifier
+    fb_routers: FileBrowserRouters,  # File browser routers (has render + selection refs)
     selected_files: list,  # Current selected files
     selected_folders: list = None,  # Current selected folders
-):  # Browser panel with OOB attribute set
+) -> Any:  # Browser panel with OOB attribute set
     "Render browser panel as OOB swap to update selection highlights."
 ```
 
 ``` python
 def _handle_remove(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
-    provider: LocalFileSystemProvider,  # File system provider
-    config: FileBrowserConfig,  # Browser configuration
     workflow_id: str,  # Workflow identifier
-    home_path: str,  # Home directory path
     urls: SourceSelectUrls,  # URL bundle
+    fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
     path: str,  # File path to remove
 ):  # (selection panel, OOB browser panel, OOB stats panel)
@@ -576,11 +536,9 @@ async def _handle_reorder(
 ``` python
 def _handle_clear(
     state_store: SQLiteWorkflowStateStore,  # Workflow state store
-    provider: LocalFileSystemProvider,  # File system provider
-    config: FileBrowserConfig,  # Browser configuration
     workflow_id: str,  # Workflow identifier
-    home_path: str,  # Home directory path
     urls: SourceSelectUrls,  # URL bundle
+    fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
 ):  # (selection panel, OOB browser panel, OOB stats panel)
     "Clear all selected files and folders."
@@ -594,6 +552,7 @@ def init_selection_router(
     workflow_id: str,  # Workflow identifier
     urls: SourceSelectUrls,  # Mutable URL bundle
     home_path: str = "",  # Home directory path
+    fb_routers: FileBrowserRouters = None,  # File browser routers (for OOB sync)
     prefix: str = "/selection",  # Route prefix
 ) -> Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)
     "Initialize selection queue management routes."
@@ -760,11 +719,7 @@ def render_source_select_step(
     extraction_results: Dict[str, ExtractionResult],  # video_path -> result
     verified: bool,  # Whether selection is verified
     urls: SourceSelectUrls,  # URL bundle
-    provider: LocalFileSystemProvider,  # File system provider
-    browser_config: FileBrowserConfig,  # Browser configuration
-    home_path: str,  # Home directory path
-    browser_state: Optional[BrowserState] = None,  # Browser state (created if None)
-    start_path: str = "",  # Starting directory (used if no browser_state)
+    render_browser_panel_fn: Callable,  # Browser panel render function from init_browser_router
 ) -> Div:  # Complete step view
     "Render the complete source selection step."
 ```
