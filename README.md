@@ -56,46 +56,46 @@ graph LR
     utils[utils<br/>utils]
 
     components_file_browser_panel --> html_ids
-    components_preview_panel --> utils
     components_preview_panel --> models
     components_preview_panel --> html_ids
-    components_selection_panel --> utils
+    components_preview_panel --> utils
     components_selection_panel --> models
     components_selection_panel --> html_ids
+    components_selection_panel --> utils
     components_stats_panel --> models
     components_stats_panel --> html_ids
+    components_step_renderer --> components_stats_panel
     components_step_renderer --> models
     components_step_renderer --> components_selection_panel
-    components_step_renderer --> components_stats_panel
-    components_step_renderer --> html_ids
     components_step_renderer --> components_preview_panel
+    components_step_renderer --> html_ids
+    routes_browser --> components_stats_panel
+    routes_browser --> models
+    routes_browser --> routes_core
+    routes_browser --> components_selection_panel
     routes_browser --> utils
     routes_browser --> components_file_browser_panel
-    routes_browser --> routes_core
-    routes_browser --> models
-    routes_browser --> components_stats_panel
-    routes_browser --> components_selection_panel
     routes_core --> models
+    routes_init --> routes_verify
+    routes_init --> services_source_select
     routes_init --> models
     routes_init --> routes_browser
-    routes_init --> routes_verify
     routes_init --> routes_preview
-    routes_init --> services_source_select
     routes_init --> routes_selection
-    routes_preview --> models
-    routes_preview --> routes_core
     routes_preview --> components_preview_panel
+    routes_preview --> routes_core
+    routes_preview --> models
+    routes_selection --> components_stats_panel
+    routes_selection --> models
+    routes_selection --> routes_core
+    routes_selection --> components_selection_panel
     routes_selection --> utils
     routes_selection --> components_file_browser_panel
-    routes_selection --> routes_core
-    routes_selection --> models
-    routes_selection --> components_stats_panel
-    routes_selection --> components_selection_panel
-    routes_verify --> models
     routes_verify --> routes_core
     routes_verify --> components_stats_panel
-    routes_verify --> components_selection_panel
+    routes_verify --> models
     routes_verify --> services_source_select
+    routes_verify --> components_selection_panel
 ```
 
 *41 cross-module dependencies detected*
@@ -480,12 +480,13 @@ from cjm_transcription_source_select.routes.selection import (
 #### Functions
 
 ``` python
-def _render_oob_browser(
-    fb_routers: FileBrowserRouters,  # File browser routers (has render + selection refs)
-    selected_files: list,  # Current selected files
-    selected_folders: list = None,  # Current selected folders
-) -> Any:  # Browser panel with OOB attribute set
-    "Render browser panel as OOB swap to update selection highlights."
+def _render_oob_checkboxes(
+    fb_routers: FileBrowserRouters,  # File browser routers
+    selected_files: list,            # Current selected files
+    selected_folders: list,          # Current selected folders
+    changed_paths: list,             # Paths whose checkbox state changed
+) -> tuple:  # OOB cell elements for visible checkboxes
+    "Sync selection state and return targeted checkbox OOBs for changed paths."
 ```
 
 ``` python
@@ -496,7 +497,7 @@ def _handle_remove(
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
     key: str,  # Item key (file path) to remove
-):  # OOB tuple (selection panel, browser panel, stats panel)
+):  # OOB tuple (selection panel, checkbox OOBs, stats panel)
     "Remove a file from the selection by key."
 ```
 
@@ -518,7 +519,7 @@ def _handle_clear(
     urls: SourceSelectUrls,  # URL bundle
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
-):  # OOB tuple (selection panel, browser panel, stats panel)
+):  # OOB tuple (selection panel, checkbox OOBs, stats panel)
     "Clear all selected files and folders."
 ```
 
@@ -529,7 +530,7 @@ def _handle_toggle_all(
     urls: SourceSelectUrls,  # URL bundle
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
-):  # OOB tuple (selection panel, browser panel, stats panel)
+):  # OOB tuple (selection panel, checkbox OOBs, stats panel)
     "Toggle all media files in the current directory."
 ```
 

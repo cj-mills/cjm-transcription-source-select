@@ -24,25 +24,20 @@ from cjm_transcription_source_select.routes.core import (
 )
 from ..components.selection_panel import render_selection_panel
 from ..components.stats_panel import render_stats_panel
-from cjm_transcription_source_select.components.file_browser_panel import (
-    get_browser_state, sync_browser_selection, render_browser_panel,
-    MEDIA_FILTER_EXTENSIONS,
-)
+from ..components.file_browser_panel import sync_browser_selection
 
 DEBUG_REORDER = False
 
 # %% ../../nbs/routes/selection.ipynb #6faf1f42
-def _render_oob_browser(
-    fb_routers: FileBrowserRouters,  # File browser routers (has render + selection refs)
-    selected_files: list,  # Current selected files
-    selected_folders: list = None,  # Current selected folders
-) -> Any:  # Browser panel with OOB attribute set
-    """Render browser panel as OOB swap to update selection highlights."""
-    # Sync selection into file browser's closure state
+def _render_oob_checkboxes(
+    fb_routers: FileBrowserRouters,  # File browser routers
+    selected_files: list,            # Current selected files
+    selected_folders: list,          # Current selected folders
+    changed_paths: list,             # Paths whose checkbox state changed
+) -> tuple:  # OOB cell elements for visible checkboxes
+    """Sync selection state and return targeted checkbox OOBs for changed paths."""
     sync_browser_selection(fb_routers._fb_state_getter(), selected_files, selected_folders)
-    browser = render_browser_panel(render_fn=fb_routers.render)
-    browser.attrs["hx-swap-oob"] = "outerHTML"
-    return browser
+    return fb_routers.render_selection_oobs(changed_paths)
 
 # %% ../../nbs/routes/selection.ipynb #66ceacad
 def _handle_remove(
@@ -52,7 +47,7 @@ def _handle_remove(
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
     key: str,  # Item key (file path) to remove
-):  # OOB tuple (selection panel, browser panel, stats panel)
+):  # OOB tuple (selection panel, checkbox OOBs, stats panel)
     """Remove a file from the selection by key."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
@@ -63,6 +58,9 @@ def _handle_remove(
     selected_files = [f for f in selected_files if f["path"] != key]
     extraction_results.pop(key, None)
 
+    # Track changed paths for targeted checkbox OOBs
+    changed_paths = [key]
+
     # Auto-deselect parent folder if no files from it remain
     parent = str(Path(key).parent)
     if parent in selected_folders:
@@ -70,6 +68,7 @@ def _handle_remove(
         has_sibling = any(str(Path(p).parent) == parent for p in remaining)
         if not has_sibling:
             selected_folders = [f for f in selected_folders if f != parent]
+            changed_paths.append(parent)
 
     update_step_state(
         state_store, workflow_id, session_id,
@@ -80,15 +79,12 @@ def _handle_remove(
         committed_audio_paths=[],
     )
 
-    # Sync browser selection display
-    sync_browser_selection(fb_routers._fb_state_getter(), selected_files, selected_folders)
-
     selection_oob = render_selection_panel(selected_files, urls, extraction_results)
     selection_oob.attrs["hx-swap-oob"] = "outerHTML"
-    browser_oob = _render_oob_browser(fb_routers, selected_files, selected_folders)
+    checkbox_oobs = _render_oob_checkboxes(fb_routers, selected_files, selected_folders, changed_paths)
     stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
     stats_oob.attrs["hx-swap-oob"] = "outerHTML"
-    return selection_oob, browser_oob, stats_oob
+    return (selection_oob, *checkbox_oobs, stats_oob)
 
 # %% ../../nbs/routes/selection.ipynb #35033565
 async def _handle_reorder(
@@ -154,9 +150,15 @@ def _handle_clear(
     urls: SourceSelectUrls,  # URL bundle
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
-):  # OOB tuple (selection panel, browser panel, stats panel)
+):  # OOB tuple (selection panel, checkbox OOBs, stats panel)
     """Clear all selected files and folders."""
     session_id = get_session_id_from_sess(sess)
+    step_state = get_step_state(state_store, workflow_id, session_id)
+
+    # Capture paths before clearing for targeted checkbox OOBs
+    old_files = step_state.get("selected_files", [])
+    old_folders = step_state.get("selected_folders", [])
+    changed_paths = [f["path"] for f in old_files] + list(old_folders)
 
     update_step_state(
         state_store, workflow_id, session_id,
@@ -167,15 +169,12 @@ def _handle_clear(
         committed_audio_paths=[],
     )
 
-    # Sync browser selection display
-    sync_browser_selection(fb_routers._fb_state_getter(), [], [])
-
     selection_oob = render_selection_panel([], urls)
     selection_oob.attrs["hx-swap-oob"] = "outerHTML"
-    browser_oob = _render_oob_browser(fb_routers, [], [])
+    checkbox_oobs = _render_oob_checkboxes(fb_routers, [], [], changed_paths)
     stats_oob = render_stats_panel([], urls)
     stats_oob.attrs["hx-swap-oob"] = "outerHTML"
-    return selection_oob, browser_oob, stats_oob
+    return (selection_oob, *checkbox_oobs, stats_oob)
 
 # %% ../../nbs/routes/selection.ipynb #9d362de7
 from ..models import SelectedFile
@@ -186,7 +185,7 @@ def _handle_toggle_all(
     urls: SourceSelectUrls,  # URL bundle
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
-):  # OOB tuple (selection panel, browser panel, stats panel)
+):  # OOB tuple (selection panel, checkbox OOBs, stats panel)
     """Toggle all media files in the current directory."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
@@ -241,16 +240,14 @@ def _handle_toggle_all(
         committed_audio_paths=[],
     )
 
-    # Sync browser selection display
     selected_folders = step_state.get("selected_folders", [])
-    sync_browser_selection(fb_routers._fb_state_getter(), selected_files, selected_folders)
 
     selection_oob = render_selection_panel(selected_files, urls, extraction_results)
     selection_oob.attrs["hx-swap-oob"] = "outerHTML"
-    browser_oob = _render_oob_browser(fb_routers, selected_files, selected_folders)
+    checkbox_oobs = _render_oob_checkboxes(fb_routers, selected_files, selected_folders, list(media_paths))
     stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
     stats_oob.attrs["hx-swap-oob"] = "outerHTML"
-    return selection_oob, browser_oob, stats_oob
+    return (selection_oob, *checkbox_oobs, stats_oob)
 
 
 def init_selection_router(
