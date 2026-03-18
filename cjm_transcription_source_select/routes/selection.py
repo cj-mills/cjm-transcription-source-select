@@ -24,7 +24,6 @@ from cjm_transcription_source_select.routes.core import (
 )
 from ..components.selection_panel import render_selection_panel
 from ..components.stats_panel import render_stats_panel
-from ..components.file_browser_panel import sync_browser_selection
 
 DEBUG_REORDER = False
 
@@ -36,8 +35,8 @@ def _render_oob_checkboxes(
     changed_paths: list,             # Paths whose checkbox state changed
 ) -> tuple:  # OOB cell elements for visible checkboxes
     """Sync selection state and return targeted checkbox OOBs for changed paths."""
-    sync_browser_selection(fb_routers._fb_state_getter(), selected_files, selected_folders)
-    return fb_routers.render_selection_oobs(changed_paths)
+    all_selected = [f["path"] for f in selected_files] + (selected_folders or [])
+    return fb_routers.update_selection_oobs(all_selected, changed_paths)
 
 # %% ../../nbs/routes/selection.ipynb #66ceacad
 def _handle_remove(

@@ -56,49 +56,48 @@ graph LR
     utils[utils<br/>utils]
 
     components_file_browser_panel --> html_ids
-    components_preview_panel --> models
     components_preview_panel --> html_ids
+    components_preview_panel --> models
     components_preview_panel --> utils
     components_selection_panel --> models
     components_selection_panel --> html_ids
     components_selection_panel --> utils
     components_stats_panel --> models
     components_stats_panel --> html_ids
-    components_step_renderer --> components_stats_panel
     components_step_renderer --> models
+    components_step_renderer --> html_ids
     components_step_renderer --> components_selection_panel
     components_step_renderer --> components_preview_panel
-    components_step_renderer --> html_ids
-    routes_browser --> components_stats_panel
-    routes_browser --> models
+    components_step_renderer --> components_stats_panel
     routes_browser --> routes_core
+    routes_browser --> models
+    routes_browser --> components_file_browser_panel
     routes_browser --> components_selection_panel
     routes_browser --> utils
-    routes_browser --> components_file_browser_panel
+    routes_browser --> components_stats_panel
     routes_core --> models
-    routes_init --> routes_verify
-    routes_init --> services_source_select
-    routes_init --> models
     routes_init --> routes_browser
     routes_init --> routes_preview
+    routes_init --> routes_verify
+    routes_init --> models
+    routes_init --> services_source_select
     routes_init --> routes_selection
     routes_preview --> components_preview_panel
     routes_preview --> routes_core
     routes_preview --> models
-    routes_selection --> components_stats_panel
-    routes_selection --> models
     routes_selection --> routes_core
+    routes_selection --> models
     routes_selection --> components_selection_panel
     routes_selection --> utils
-    routes_selection --> components_file_browser_panel
+    routes_selection --> components_stats_panel
     routes_verify --> routes_core
-    routes_verify --> components_stats_panel
     routes_verify --> models
     routes_verify --> services_source_select
     routes_verify --> components_selection_panel
+    routes_verify --> components_stats_panel
 ```
 
-*41 cross-module dependencies detected*
+*40 cross-module dependencies detected*
 
 ## CLI Reference
 
@@ -600,7 +599,7 @@ def _render_queue_empty() -> Any:  # Empty state element
     """Render the custom empty state for the file selection queue."""
     return P(
         "Click files in the browser to select them",
-        cls=combine_classes(text_dui.base_content.opacity(30), text_align.center, font_size.xs)
+        cls=combine_classes(text_dui.base_content.opacity(50), text_align.center, font_size.md, p(2))
     )
 
 

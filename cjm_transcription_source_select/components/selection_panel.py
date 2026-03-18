@@ -15,7 +15,7 @@ from cjm_fasthtml_daisyui.components.actions.button import btn, btn_sizes, btn_s
 from cjm_fasthtml_daisyui.components.data_display.badge import badge, badge_colors, badge_sizes, badge_styles
 from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui
 
-from cjm_fasthtml_tailwind.utilities.spacing import m
+from cjm_fasthtml_tailwind.utilities.spacing import m, p
 from cjm_fasthtml_tailwind.utilities.sizing import w
 from cjm_fasthtml_tailwind.utilities.typography import font_size, text_align, truncate
 from cjm_fasthtml_tailwind.utilities.flexbox_and_grid import (
@@ -143,7 +143,7 @@ def _render_queue_empty() -> Any:  # Empty state element
     """Render the custom empty state for the file selection queue."""
     return P(
         "Click files in the browser to select them",
-        cls=combine_classes(text_dui.base_content.opacity(30), text_align.center, font_size.xs)
+        cls=combine_classes(text_dui.base_content.opacity(50), text_align.center, font_size.md, p(2))
     )
 
 
