@@ -51,20 +51,20 @@ def _handle_remove(
     urls: SourceSelectUrls,  # URL bundle
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
-    path: str,  # File path to remove
+    key: str,  # Item key (file path) to remove
 ):  # OOB tuple (selection panel, browser panel, stats panel)
-    """Remove a file from the selection."""
+    """Remove a file from the selection by key."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
     selected_files = step_state.get("selected_files", [])
     selected_folders = step_state.get("selected_folders", [])
     extraction_results = step_state.get("extraction_results", {})
 
-    selected_files = [f for f in selected_files if f["path"] != path]
-    extraction_results.pop(path, None)
+    selected_files = [f for f in selected_files if f["path"] != key]
+    extraction_results.pop(key, None)
 
     # Auto-deselect parent folder if no files from it remain
-    parent = str(Path(path).parent)
+    parent = str(Path(key).parent)
     if parent in selected_folders:
         remaining = {f["path"] for f in selected_files}
         has_sibling = any(str(Path(p).parent) == parent for p in remaining)
@@ -98,32 +98,47 @@ async def _handle_reorder(
     request,  # FastHTML request
     sess,  # FastHTML session
 ):  # Rendered selection panel
-    """Reorder selected files based on SortableJS drag result."""
+    """Reorder selected files based on SortableJS drag or keyboard Shift+Arrow."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
     selected_files = step_state.get("selected_files", [])
 
-    # Extract new order from form data (Hidden inputs sent in DOM order)
     form_data = await request.form()
-    new_order_paths = form_data.getlist("item")
 
-    if DEBUG_REORDER:
-        print(f"\n[REORDER DEBUG] Handler called")
-        print(f"  Content-Type: {request.headers.get('content-type', 'MISSING')}")
-        print(f"  form_data keys: {list(form_data.keys())}")
-        print(f"  form_data.getlist('item'): {new_order_paths}")
-        print(f"  len(new_order_paths): {len(new_order_paths)}")
-        print(f"  len(selected_files): {len(selected_files)}")
+    # Check if this is a keyboard reorder (has direction from vals_map)
+    direction = form_data.get("direction", "")
+    focused_key = form_data.get("key", "")
 
-    # Rebuild list in new order
-    path_to_file = {f["path"]: f for f in selected_files}
-    reordered = [path_to_file[p] for p in new_order_paths if p in path_to_file]
+    if direction and focused_key:
+        # Keyboard reorder: swap item with neighbor
+        result = list(selected_files)
+        idx = next((i for i, f in enumerate(result) if f["path"] == focused_key), None)
+        if idx is not None:
+            if direction == "up" and idx > 0:
+                result[idx], result[idx - 1] = result[idx - 1], result[idx]
+            elif direction == "down" and idx < len(result) - 1:
+                result[idx], result[idx + 1] = result[idx + 1], result[idx]
+        reordered = result
+    else:
+        # Drag-drop reorder: rebuild list in new DOM order
+        new_order_paths = form_data.getlist("item")
 
-    # Add any files not in the form data (shouldn't happen, but safe)
-    reordered_paths = {f["path"] for f in reordered}
-    for f in selected_files:
-        if f["path"] not in reordered_paths:
-            reordered.append(f)
+        if DEBUG_REORDER:
+            print(f"\n[REORDER DEBUG] Handler called")
+            print(f"  Content-Type: {request.headers.get('content-type', 'MISSING')}")
+            print(f"  form_data keys: {list(form_data.keys())}")
+            print(f"  form_data.getlist('item'): {new_order_paths}")
+            print(f"  len(new_order_paths): {len(new_order_paths)}")
+            print(f"  len(selected_files): {len(selected_files)}")
+
+        path_to_file = {f["path"]: f for f in selected_files}
+        reordered = [path_to_file[p] for p in new_order_paths if p in path_to_file]
+
+        # Append any files not in the form data (safety fallback)
+        reordered_paths = {f["path"] for f in reordered}
+        for f in selected_files:
+            if f["path"] not in reordered_paths:
+                reordered.append(f)
 
     update_step_state(
         state_store, workflow_id, session_id,
@@ -252,13 +267,13 @@ def init_selection_router(
     router = APIRouter(prefix=prefix)
 
     @router
-    def remove(sess, path: str = ""):
-        """Remove a file from the selection."""
-        if not path:
+    def remove(sess, key: str = ""):
+        """Remove a file from the selection by key."""
+        if not key:
             session_id = get_session_id_from_sess(sess)
             step_state = get_step_state(state_store, workflow_id, session_id)
             return render_selection_panel(step_state.get("selected_files", []), urls)
-        return _handle_remove(state_store, workflow_id, urls, fb_routers, sess, path)
+        return _handle_remove(state_store, workflow_id, urls, fb_routers, sess, key)
 
     @router
     async def reorder(request, sess):

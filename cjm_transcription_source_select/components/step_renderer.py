@@ -10,7 +10,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 from fasthtml.common import Div, H2, P, Script, Button
 
-from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui, ring_dui
+from cjm_fasthtml_daisyui.utilities.semantic_colors import bg_dui, text_dui, ring_dui
+from cjm_fasthtml_daisyui.utilities.border_radius import border_radius
 
 from cjm_fasthtml_tailwind.utilities.spacing import p, m
 from cjm_fasthtml_tailwind.utilities.sizing import w, h
@@ -26,19 +27,25 @@ from cjm_fasthtml_viewport_fit.models import ViewportFitConfig
 from cjm_fasthtml_viewport_fit.components import render_viewport_fit_script
 
 from cjm_fasthtml_keyboard_navigation.core.manager import ZoneManager
-from cjm_fasthtml_keyboard_navigation.core.navigation import LinearVertical, ScrollOnly
+from cjm_fasthtml_keyboard_navigation.core.navigation import ScrollOnly
 from cjm_fasthtml_keyboard_navigation.core.focus_zone import FocusZone
 from cjm_fasthtml_keyboard_navigation.core.actions import KeyAction
 from cjm_fasthtml_keyboard_navigation.components.system import render_keyboard_system
+
+# Sortable queue library
+from cjm_fasthtml_sortable_queue.sortable_js import sortable_js_headers, generate_sortable_init_script
+from cjm_fasthtml_sortable_queue.keyboard import create_queue_keyboard_system
+from cjm_fasthtml_sortable_queue.models import SortableQueueUrls
 
 from cjm_transcription_source_select.models import (
     SourceSelectUrls, SelectedFile, ExtractionResult
 )
 from ..html_ids import SourceSelectHtmlIds
-from .selection_panel import render_selection_panel
+from cjm_transcription_source_select.components.selection_panel import (
+    render_selection_panel, TSS_QUEUE_CONFIG, TSS_QUEUE_IDS
+)
 from .preview_panel import render_preview_panel
 from .stats_panel import render_stats_panel
-from .helpers import generate_sortable_init_script
 
 # %% ../../nbs/components/step_renderer.ipynb #f6a7b8c9
 # Viewport fit config for the two-column grid
@@ -48,10 +55,8 @@ _VIEWPORT_FIT_CONFIG = ViewportFitConfig(
 )
 
 
-def _create_parent_keyboard_manager(
-    urls: SourceSelectUrls,  # URL bundle for action button targets
-) -> ZoneManager:  # Parent keyboard manager for hierarchy
-    """Create the parent keyboard manager with ghost-browser zone and queue zone."""
+def _create_parent_keyboard_manager() -> ZoneManager:  # Parent keyboard manager for hierarchy
+    """Create the parent keyboard manager with two ghost zones for column switching."""
     ghost_browser_zone = FocusZone(
         id=SourceSelectHtmlIds.GHOST_BROWSER,
         item_selector=None,
@@ -59,10 +64,10 @@ def _create_parent_keyboard_manager(
         zone_focus_classes=(str(ring(2)), str(ring_dui.primary)),
     )
 
-    queue_zone = FocusZone(
-        id=SourceSelectHtmlIds.SELECTION_LIST,
-        item_selector="li.queue-item",
-        navigation=LinearVertical(),
+    ghost_queue_zone = FocusZone(
+        id=SourceSelectHtmlIds.GHOST_QUEUE,
+        item_selector=None,
+        navigation=ScrollOnly(),
         zone_focus_classes=(str(ring(1)), str(ring_dui.secondary)),
     )
 
@@ -73,6 +78,15 @@ def _create_parent_keyboard_manager(
             js_callback="activateBrowserChild",
             zone_ids=(SourceSelectHtmlIds.GHOST_BROWSER,),
             description="Activate browser",
+            hint_group="Navigation",
+        ),
+
+        # Enter activates the queue child when ghost-queue zone is active
+        KeyAction(
+            key="Enter",
+            js_callback="activateQueueChild",
+            zone_ids=(SourceSelectHtmlIds.GHOST_QUEUE,),
+            description="Activate queue",
             hint_group="Navigation",
         ),
 
@@ -87,7 +101,7 @@ def _create_parent_keyboard_manager(
     )
 
     return ZoneManager(
-        zones=(ghost_browser_zone, queue_zone),
+        zones=(ghost_browser_zone, ghost_queue_zone),
         actions=actions,
         system_id=SourceSelectHtmlIds.PARENT_SYSTEM_ID,
         prev_zone_key="ArrowLeft",
@@ -100,6 +114,7 @@ def _generate_hierarchy_js() -> Script:  # Script element with hierarchy wiring
     """Generate JavaScript for keyboard system hierarchy and child activation."""
     parent_id = SourceSelectHtmlIds.PARENT_SYSTEM_ID
     fb_id = SourceSelectHtmlIds.FB_SYSTEM_ID
+    queue_system_id = TSS_QUEUE_IDS.system_id
 
     return Script(f"""
     (function() {{
@@ -108,14 +123,23 @@ def _generate_hierarchy_js() -> Script:  # Script element with hierarchy wiring
 
         const PARENT_ID = '{parent_id}';
         const FB_ID = '{fb_id}';
+        const QUEUE_ID = '{queue_system_id}';
 
-        // Establish hierarchy: file browser is child of parent
+        // Establish hierarchy: file browser + queue are children of parent
         if (coord._systems[FB_ID]) coord.setParent(FB_ID, PARENT_ID);
+        if (coord._systems[QUEUE_ID]) coord.setParent(QUEUE_ID, PARENT_ID);
 
         // Activate browser child when Enter pressed on ghost-browser zone
         window.activateBrowserChild = function(item, index, zoneId, mode) {{
             if (coord._systems[FB_ID]) {{
                 coord.setActiveChild(PARENT_ID, FB_ID);
+            }}
+        }};
+
+        // Activate queue child when Enter pressed on ghost-queue zone
+        window.activateQueueChild = function(item, index, zoneId, mode) {{
+            if (coord._systems[QUEUE_ID]) {{
+                coord.setActiveChild(PARENT_ID, QUEUE_ID);
             }}
         }};
 
@@ -144,14 +168,19 @@ def render_source_select_step(
     preview_panel = render_preview_panel(media_src_url=urls.media_src)
     stats_panel = render_stats_panel(selected_files, urls, extraction_results, verified)
 
-    # Keyboard system
-    kb_manager = _create_parent_keyboard_manager(urls)
+    # Parent keyboard system (two ghost zones for column switching)
+    kb_manager = _create_parent_keyboard_manager()
 
+    # Toggle-all uses swap="none" since the handler returns OOB elements
     url_map = {
         SourceSelectHtmlIds.TOGGLE_ALL_BTN: urls.toggle_all,
     }
-    target_map = {bid: f"#{SourceSelectHtmlIds.SELECTION_PANEL}" for bid in url_map}
-    swap_map = {bid: "none" for bid in url_map}
+    target_map = {
+        SourceSelectHtmlIds.TOGGLE_ALL_BTN: f"#{SourceSelectHtmlIds.MAIN_CONTAINER}",
+    }
+    swap_map = {
+        SourceSelectHtmlIds.TOGGLE_ALL_BTN: "none",
+    }
 
     kb_system = render_keyboard_system(
         kb_manager,
@@ -162,6 +191,16 @@ def render_source_select_step(
         include_state_inputs=True,
     )
 
+    # Queue keyboard system (self-contained child from sortable-queue library)
+    queue_kb = create_queue_keyboard_system(
+        config=TSS_QUEUE_CONFIG,
+        ids=TSS_QUEUE_IDS,
+        urls=SortableQueueUrls(reorder=urls.reorder, remove=urls.remove, clear=urls.clear),
+        zone_focus_classes=(str(ring(1)), str(ring_dui.secondary)),
+        item_focus_classes=(str(bg_dui.secondary.opacity(10)), str(ring(1)), str(ring_dui.secondary)),
+        data_attributes=("key",),
+    )
+
     return Div(
         # Two-column layout (browser left, selection right)
         Div(
@@ -170,8 +209,11 @@ def render_source_select_step(
                 cls=combine_classes(
                     w.full, h.full, overflow.hidden,
                     flex_display, flex_direction.col,
+                    border_radius.box,
                 )),
-            Div(selection_panel, cls=combine_classes(w.full, overflow.y.auto)),
+            Div(selection_panel,
+                id=SourceSelectHtmlIds.GHOST_QUEUE,
+                cls=combine_classes(w.full, overflow.y.auto, border_radius.box)),
             id=SourceSelectHtmlIds.TWO_COL_GRID,
             cls=combine_classes(str(grid_display), grid_cols(1), grid_cols(2).lg, gap(4))
         ),
@@ -182,15 +224,22 @@ def render_source_select_step(
         # Stats / verify panel
         stats_panel,
 
-        # Keyboard system
+        # Parent keyboard system
         kb_system.script,
         kb_system.hidden_inputs,
         kb_system.action_buttons,
+
+        # Queue keyboard system (child)
+        queue_kb.script,
+        queue_kb.hidden_inputs,
+        queue_kb.action_buttons,
+
+        # Hierarchy wiring
         _generate_hierarchy_js(),
 
         # SortableJS library + initialization
-        Script(src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"),
-        Script(generate_sortable_init_script()),
+        *sortable_js_headers(),
+        generate_sortable_init_script(),
 
         # Viewport fit script
         render_viewport_fit_script(_VIEWPORT_FIT_CONFIG),

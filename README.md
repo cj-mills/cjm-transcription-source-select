@@ -64,42 +64,41 @@ graph LR
     components_selection_panel --> html_ids
     components_stats_panel --> models
     components_stats_panel --> html_ids
-    components_step_renderer --> models
-    components_step_renderer --> html_ids
-    components_step_renderer --> components_preview_panel
-    components_step_renderer --> components_selection_panel
-    components_step_renderer --> components_helpers
     components_step_renderer --> components_stats_panel
-    routes_browser --> utils
-    routes_browser --> models
-    routes_browser --> components_file_browser_panel
-    routes_browser --> components_selection_panel
-    routes_browser --> routes_core
+    components_step_renderer --> components_selection_panel
+    components_step_renderer --> models
+    components_step_renderer --> components_preview_panel
+    components_step_renderer --> html_ids
     routes_browser --> components_stats_panel
+    routes_browser --> components_file_browser_panel
+    routes_browser --> routes_core
+    routes_browser --> components_selection_panel
+    routes_browser --> models
+    routes_browser --> utils
     routes_core --> models
-    routes_init --> models
-    routes_init --> routes_preview
-    routes_init --> routes_selection
     routes_init --> routes_browser
-    routes_init --> routes_verify
+    routes_init --> models
     routes_init --> services_source_select
-    routes_preview --> models
+    routes_init --> routes_verify
+    routes_init --> routes_selection
+    routes_init --> routes_preview
     routes_preview --> routes_core
     routes_preview --> components_preview_panel
-    routes_selection --> utils
-    routes_selection --> models
-    routes_selection --> components_file_browser_panel
-    routes_selection --> components_selection_panel
-    routes_selection --> routes_core
+    routes_preview --> models
     routes_selection --> components_stats_panel
+    routes_selection --> components_file_browser_panel
+    routes_selection --> routes_core
+    routes_selection --> components_selection_panel
+    routes_selection --> models
+    routes_selection --> utils
     routes_verify --> routes_core
-    routes_verify --> models
     routes_verify --> components_stats_panel
+    routes_verify --> models
     routes_verify --> services_source_select
     routes_verify --> components_selection_panel
 ```
 
-*42 cross-module dependencies detected*
+*41 cross-module dependencies detected*
 
 ## CLI Reference
 
@@ -268,29 +267,6 @@ def render_browser_panel(
 AUDIO_FILTER_EXTENSIONS = [8 items]
 VIDEO_FILTER_EXTENSIONS = [7 items]
 MEDIA_FILTER_EXTENSIONS
-```
-
-### components/helpers (`helpers.ipynb`)
-
-> Shared helper functions for the transcription source selection step
-
-#### Import
-
-``` python
-from cjm_transcription_source_select.components.helpers import (
-    generate_sortable_init_script
-)
-```
-
-#### Functions
-
-``` python
-def generate_sortable_init_script(
-    container_selector: str = ".sortable",  # CSS selector for sortable containers
-    handle_selector: str = ".drag-handle",  # CSS selector for drag handles
-    animation_ms: int = 150,  # Animation duration in milliseconds
-) -> str:  # JavaScript initialization script
-    "Generate Sortable.js initialization script for htmx integration."
 ```
 
 ### html_ids (`html_ids.ipynb`)
@@ -519,9 +495,9 @@ def _handle_remove(
     urls: SourceSelectUrls,  # URL bundle
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
-    path: str,  # File path to remove
+    key: str,  # Item key (file path) to remove
 ):  # OOB tuple (selection panel, browser panel, stats panel)
-    "Remove a file from the selection."
+    "Remove a file from the selection by key."
 ```
 
 ``` python
@@ -532,7 +508,7 @@ async def _handle_reorder(
     request,  # FastHTML request
     sess,  # FastHTML session
 ):  # Rendered selection panel
-    "Reorder selected files based on SortableJS drag result."
+    "Reorder selected files based on SortableJS drag or keyboard Shift+Arrow."
 ```
 
 ``` python
@@ -586,7 +562,9 @@ DEBUG_REORDER = False
 
 ``` python
 from cjm_transcription_source_select.components.selection_panel import (
-    render_queue_item,
+    TSS_QUEUE_PREFIX,
+    TSS_QUEUE_CONFIG,
+    TSS_QUEUE_IDS,
     render_selection_panel
 )
 ```
@@ -609,13 +587,28 @@ def _render_extraction_status(
 ```
 
 ``` python
-def render_queue_item(
-    selected_file: SelectedFile,  # Selected file data
-    index: int,  # Position in queue (1-based)
+def _make_render_content(
+    urls: SourceSelectUrls,  # URL bundle for preview button
+    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # video_path → result
+):  # Returns a render_content callback
+    "Create a render_content callback with access to URLs and extraction results."
+```
+
+``` python
+def _render_queue_empty() -> Any:  # Empty state element
+    """Render the custom empty state for the file selection queue."""
+    return P(
+        "Click files in the browser to select them",
+        cls=combine_classes(text_dui.base_content.opacity(30), text_align.center, font_size.xs)
+    )
+
+
+def render_selection_panel(
+    selected_files: List[SelectedFile],  # Ordered list of selected files
     urls: SourceSelectUrls,  # URL bundle
     extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # video_path → result
-) -> Li:  # Queue item element
-    "Render a single item in the selection queue."
+) -> Div:  # Selection panel component
+    "Render the custom empty state for the file selection queue."
 ```
 
 ``` python
@@ -624,7 +617,15 @@ def render_selection_panel(
     urls: SourceSelectUrls,  # URL bundle
     extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # video_path → result
 ) -> Div:  # Selection panel component
-    "Render the selection panel with drag-drop reordering."
+    "Render the selection panel via cjm-fasthtml-sortable-queue."
+```
+
+#### Variables
+
+``` python
+TSS_QUEUE_PREFIX = 'tss'
+TSS_QUEUE_CONFIG
+TSS_QUEUE_IDS
 ```
 
 ### services/source_select (`source_select.ipynb`)
@@ -727,10 +728,8 @@ from cjm_transcription_source_select.components.step_renderer import (
 #### Functions
 
 ``` python
-def _create_parent_keyboard_manager(
-    urls: SourceSelectUrls,  # URL bundle for action button targets
-) -> ZoneManager:  # Parent keyboard manager for hierarchy
-    "Create the parent keyboard manager with ghost-browser zone and queue zone."
+def _create_parent_keyboard_manager() -> ZoneManager:  # Parent keyboard manager for hierarchy
+    "Create the parent keyboard manager with two ghost zones for column switching."
 ```
 
 ``` python

@@ -51,6 +51,7 @@ class SourceSelectHtmlIds:
 
     # Keyboard navigation
     GHOST_BROWSER = "tss-ghost-browser"  # Ghost zone wrapping file browser area
+    GHOST_QUEUE = "tss-ghost-queue"  # Ghost zone wrapping queue panel area
     PARENT_SYSTEM_ID = "tss-parent-kb"  # Parent keyboard system for hierarchy
     FB_SYSTEM_ID = "tss_fb-collection"  # File browser VC keyboard system (matches vc_prefix)
 
