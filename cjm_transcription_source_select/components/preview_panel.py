@@ -16,7 +16,7 @@ from cjm_fasthtml_daisyui.components.data_display.collapse import (
     collapse, collapse_title, collapse_content, collapse_modifiers
 )
 from cjm_fasthtml_daisyui.components.data_display.badge import badge, badge_styles, badge_sizes
-from cjm_fasthtml_daisyui.utilities.semantic_colors import bg_dui, text_dui, border_dui
+from cjm_fasthtml_daisyui.utilities.semantic_colors import bg_dui, text_dui, border_dui, shadow_dui
 from cjm_fasthtml_daisyui.utilities.border_radius import border_radius
 
 from cjm_fasthtml_tailwind.utilities.spacing import p, m
@@ -107,7 +107,8 @@ def render_preview_panel(
             cls=combine_classes(
                 collapse, collapse_modifiers.arrow,
                 w.full, bg_dui.base_100, border_radius.box,
-                shadow.lg, border_dui.base_300, border(), m.t(4)
+                shadow.lg, shadow_dui.base_300,
+                border_dui.base_300, border(), m.t(4)
             )
         )
 
@@ -159,6 +160,7 @@ def render_preview_panel(
         cls=combine_classes(
             collapse, collapse_modifiers.arrow,
             w.full, bg_dui.base_100, border_radius.box,
-            shadow.lg, border_dui.base_300, border(), m.t(4)
+            shadow.lg, shadow_dui.base_300,
+            border_dui.base_300, border(), m.t(4)
         )
     )

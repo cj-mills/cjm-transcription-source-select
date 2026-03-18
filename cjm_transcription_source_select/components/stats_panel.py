@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from fasthtml.common import Div, Span, Button, P
 
 from cjm_fasthtml_daisyui.components.actions.button import btn, btn_sizes, btn_colors, btn_styles
-from cjm_fasthtml_daisyui.utilities.semantic_colors import bg_dui, text_dui, border_dui
+from cjm_fasthtml_daisyui.utilities.semantic_colors import bg_dui, text_dui, border_dui, shadow_dui
 from cjm_fasthtml_daisyui.utilities.border_radius import border_radius
 
 from cjm_fasthtml_tailwind.utilities.spacing import p, m
@@ -67,7 +67,8 @@ def render_stats_panel(
             cls=combine_classes(
                 w.full, p(4), m.t(4),
                 bg_dui.base_100, border_radius.box,
-                shadow.lg, border_dui.base_300, border()
+                shadow.lg, shadow_dui.base_300,
+                border_dui.base_300, border()
             )
         )
 
@@ -104,7 +105,8 @@ def render_stats_panel(
             cls=combine_classes(
                 w.full, m.t(4),
                 bg_dui.base_100, border_radius.box,
-                shadow.lg, border_dui.base_300, border()
+                shadow.lg, shadow_dui.base_300,
+                border_dui.base_300, border()
             )
         )
 
@@ -128,6 +130,7 @@ def render_stats_panel(
         cls=combine_classes(
             w.full, m.t(4),
             bg_dui.base_100, border_radius.box,
-            shadow.lg, border_dui.base_300, border()
+            shadow.lg, shadow_dui.base_300,
+            border_dui.base_300, border()
         )
     )

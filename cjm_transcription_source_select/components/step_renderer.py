@@ -10,17 +10,19 @@ from typing import Any, Callable, Dict, List, Optional
 
 from fasthtml.common import Div, H2, P, Script, Button
 
-from cjm_fasthtml_daisyui.utilities.semantic_colors import bg_dui, text_dui, ring_dui
+from cjm_fasthtml_daisyui.utilities.semantic_colors import bg_dui, text_dui, border_dui, shadow_dui
 from cjm_fasthtml_daisyui.utilities.border_radius import border_radius
 
 from cjm_fasthtml_tailwind.utilities.spacing import p, m
 from cjm_fasthtml_tailwind.utilities.sizing import w, h
 from cjm_fasthtml_tailwind.utilities.typography import font_size, font_weight
 from cjm_fasthtml_tailwind.utilities.layout import overflow, display_tw
+from cjm_fasthtml_tailwind.utilities.borders import border
 from cjm_fasthtml_tailwind.utilities.flexbox_and_grid import (
     flex_display, flex_direction, grid_display, grid_cols, gap
 )
-from cjm_fasthtml_tailwind.utilities.effects import ring
+from cjm_fasthtml_tailwind.utilities.effects import shadow
+from cjm_fasthtml_tailwind.utilities.transitions_and_animation import transition
 from cjm_fasthtml_tailwind.core.base import combine_classes
 
 from cjm_fasthtml_viewport_fit.models import ViewportFitConfig
@@ -54,25 +56,27 @@ _VIEWPORT_FIT_CONFIG = ViewportFitConfig(
     target_id=SourceSelectHtmlIds.TWO_COL_GRID,
 )
 
+# Shadow-based zone focus styling (shadow appears only when zone is active)
+_ZONE_FOCUS_CLASSES = (str(shadow.lg), str(shadow_dui.primary))
 
+# %% ../../nbs/components/step_renderer.ipynb #yczxtfr8sxl
 def _create_parent_keyboard_manager() -> ZoneManager:  # Parent keyboard manager for hierarchy
     """Create the parent keyboard manager with two ghost zones for column switching."""
     ghost_browser_zone = FocusZone(
         id=SourceSelectHtmlIds.GHOST_BROWSER,
         item_selector=None,
         navigation=ScrollOnly(),
-        zone_focus_classes=(str(ring(2)), str(ring_dui.primary)),
+        zone_focus_classes=_ZONE_FOCUS_CLASSES,
     )
 
     ghost_queue_zone = FocusZone(
         id=SourceSelectHtmlIds.GHOST_QUEUE,
         item_selector=None,
         navigation=ScrollOnly(),
-        zone_focus_classes=(str(ring(1)), str(ring_dui.secondary)),
+        zone_focus_classes=_ZONE_FOCUS_CLASSES,
     )
 
     actions = (
-        # Enter activates the file browser child when ghost-browser zone is active
         KeyAction(
             key="Enter",
             js_callback="activateBrowserChild",
@@ -80,8 +84,6 @@ def _create_parent_keyboard_manager() -> ZoneManager:  # Parent keyboard manager
             description="Activate browser",
             hint_group="Navigation",
         ),
-
-        # Enter activates the queue child when ghost-queue zone is active
         KeyAction(
             key="Enter",
             js_callback="activateQueueChild",
@@ -89,8 +91,6 @@ def _create_parent_keyboard_manager() -> ZoneManager:  # Parent keyboard manager
             description="Activate queue",
             hint_group="Navigation",
         ),
-
-        # Ctrl+A toggles all media in current directory
         KeyAction(
             key="a",
             modifiers=frozenset({"ctrl"}),
@@ -109,7 +109,7 @@ def _create_parent_keyboard_manager() -> ZoneManager:  # Parent keyboard manager
         state_hidden_inputs=True,
     )
 
-
+# %% ../../nbs/components/step_renderer.ipynb #bnmaurxjb3f
 def _generate_hierarchy_js() -> Script:  # Script element with hierarchy wiring
     """Generate JavaScript for keyboard system hierarchy and child activation."""
     parent_id = SourceSelectHtmlIds.PARENT_SYSTEM_ID
@@ -150,7 +150,7 @@ def _generate_hierarchy_js() -> Script:  # Script element with hierarchy wiring
     }})();
     """)
 
-
+# %% ../../nbs/components/step_renderer.ipynb #ou29y3r7j3
 def render_source_select_step(
     selected_files: List[SelectedFile],  # Ordered selection
     extraction_results: Dict[str, ExtractionResult],  # video_path -> result
@@ -171,7 +171,6 @@ def render_source_select_step(
     # Parent keyboard system (two ghost zones for column switching)
     kb_manager = _create_parent_keyboard_manager()
 
-    # Toggle-all uses swap="none" since the handler returns OOB elements
     url_map = {
         SourceSelectHtmlIds.TOGGLE_ALL_BTN: urls.toggle_all,
     }
@@ -196,8 +195,6 @@ def render_source_select_step(
         config=TSS_QUEUE_CONFIG,
         ids=TSS_QUEUE_IDS,
         urls=SortableQueueUrls(reorder=urls.reorder, remove=urls.remove, clear=urls.clear),
-        zone_focus_classes=(str(ring(1)), str(ring_dui.secondary)),
-        item_focus_classes=(str(bg_dui.secondary.opacity(10)), str(ring(1)), str(ring_dui.secondary)),
         data_attributes=("key",),
     )
 
@@ -209,11 +206,16 @@ def render_source_select_step(
                 cls=combine_classes(
                     w.full, h.full, overflow.hidden,
                     flex_display, flex_direction.col,
-                    border_radius.box,
+                    border_radius.box, transition.all,
+                    border(), border_dui.base_300,
                 )),
             Div(selection_panel,
                 id=SourceSelectHtmlIds.GHOST_QUEUE,
-                cls=combine_classes(w.full, overflow.y.auto, border_radius.box)),
+                cls=combine_classes(
+                    w.full, overflow.y.auto,
+                    border_radius.box, transition.all,
+                    border(), border_dui.base_300,
+                )),
             id=SourceSelectHtmlIds.TWO_COL_GRID,
             cls=combine_classes(str(grid_display), grid_cols(1), grid_cols(2).lg, gap(4))
         ),
