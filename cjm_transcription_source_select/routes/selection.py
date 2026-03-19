@@ -23,7 +23,7 @@ from cjm_transcription_source_select.routes.core import (
     get_step_state, update_step_state, get_session_id_from_sess
 )
 from ..components.selection_panel import render_selection_panel
-from ..components.stats_panel import render_stats_panel
+from ..components.stats_panel import render_stats_content
 
 DEBUG_REORDER = False
 
@@ -46,7 +46,7 @@ def _handle_remove(
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
     key: str,  # Item key (file path) to remove
-):  # OOB tuple (selection panel, checkbox OOBs, stats panel)
+):  # OOB tuple (selection panel, checkbox OOBs, stats content)
     """Remove a file from the selection by key."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
@@ -81,8 +81,7 @@ def _handle_remove(
     selection_oob = render_selection_panel(selected_files, urls, extraction_results)
     selection_oob.attrs["hx-swap-oob"] = "outerHTML"
     checkbox_oobs = _render_oob_checkboxes(fb_routers, selected_files, selected_folders, changed_paths)
-    stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
-    stats_oob.attrs["hx-swap-oob"] = "outerHTML"
+    stats_oob = render_stats_content(selected_files, urls, extraction_results, verified=False, oob=True)
     return (selection_oob, *checkbox_oobs, stats_oob)
 
 # %% ../../nbs/routes/selection.ipynb #35033565
@@ -149,7 +148,7 @@ def _handle_clear(
     urls: SourceSelectUrls,  # URL bundle
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
-):  # OOB tuple (selection panel, checkbox OOBs, stats panel)
+):  # OOB tuple (selection panel, checkbox OOBs, stats content)
     """Clear all selected files and folders."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
@@ -171,8 +170,7 @@ def _handle_clear(
     selection_oob = render_selection_panel([], urls)
     selection_oob.attrs["hx-swap-oob"] = "outerHTML"
     checkbox_oobs = _render_oob_checkboxes(fb_routers, [], [], changed_paths)
-    stats_oob = render_stats_panel([], urls)
-    stats_oob.attrs["hx-swap-oob"] = "outerHTML"
+    stats_oob = render_stats_content([], urls, oob=True)
     return (selection_oob, *checkbox_oobs, stats_oob)
 
 # %% ../../nbs/routes/selection.ipynb #9d362de7
@@ -184,7 +182,7 @@ def _handle_toggle_all(
     urls: SourceSelectUrls,  # URL bundle
     fb_routers: FileBrowserRouters,  # File browser routers
     sess,  # FastHTML session
-):  # OOB tuple (selection panel, checkbox OOBs, stats panel)
+):  # OOB tuple (selection panel, checkbox OOBs, stats content)
     """Toggle all media files in the current directory."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
@@ -244,8 +242,7 @@ def _handle_toggle_all(
     selection_oob = render_selection_panel(selected_files, urls, extraction_results)
     selection_oob.attrs["hx-swap-oob"] = "outerHTML"
     checkbox_oobs = _render_oob_checkboxes(fb_routers, selected_files, selected_folders, list(media_paths))
-    stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
-    stats_oob.attrs["hx-swap-oob"] = "outerHTML"
+    stats_oob = render_stats_content(selected_files, urls, extraction_results, verified=False, oob=True)
     return (selection_oob, *checkbox_oobs, stats_oob)
 
 

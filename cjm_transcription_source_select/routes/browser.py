@@ -24,7 +24,7 @@ from cjm_transcription_source_select.components.file_browser_panel import (
     get_browser_state, sync_browser_selection,
 )
 from ..components.selection_panel import render_selection_panel
-from ..components.stats_panel import render_stats_panel
+from ..components.stats_panel import render_stats_content
 
 # %% ../../nbs/routes/browser.ipynb #9d4cc280
 def _list_media_in_folder(
@@ -194,8 +194,7 @@ def init_browser_router(
         # OOB updates for selection and stats panels
         selection_oob = render_selection_panel(selected_files, urls, extraction_results)
         selection_oob.attrs["hx-swap-oob"] = "outerHTML"
-        stats_oob = render_stats_panel(selected_files, urls, extraction_results, verified=False)
-        stats_oob.attrs["hx-swap-oob"] = "outerHTML"
+        stats_oob = render_stats_content(selected_files, urls, extraction_results, verified=False, oob=True)
         return (selection_oob, stats_oob)
 
     fb_callbacks = FileBrowserCallbacks(

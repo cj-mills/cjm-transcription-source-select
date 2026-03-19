@@ -17,7 +17,7 @@ from ..models import SourceSelectUrls, ExtractionResult
 from cjm_transcription_source_select.routes.core import (
     get_step_state, update_step_state, get_session_id_from_sess
 )
-from ..components.stats_panel import render_stats_panel
+from ..components.stats_panel import render_stats_content
 from ..components.selection_panel import render_selection_panel
 from ..services.source_select import SourceSelectService
 
@@ -30,7 +30,7 @@ async def _handle_verify(
     urls: SourceSelectUrls,  # URL bundle
     service: SourceSelectService,  # Source select service
     sess,  # FastHTML session
-):  # (stats panel, OOB selection panel)
+):  # OOB tuple (stats content, selection panel)
     """Verify selection and extract audio from video files."""
     session_id = get_session_id_from_sess(sess)
     step_state = get_step_state(state_store, workflow_id, session_id)
@@ -38,7 +38,7 @@ async def _handle_verify(
     extraction_results = step_state.get("extraction_results", {})
 
     if not selected_files:
-        return render_stats_panel(selected_files, urls)
+        return render_stats_content(selected_files, urls, oob=True)
 
     # Extract audio from video files
     for f in selected_files:
@@ -91,11 +91,11 @@ async def _handle_verify(
         verified=verified,
     )
 
-    # Return updated stats panel + OOB selection panel with extraction statuses
-    stats = render_stats_panel(selected_files, urls, extraction_results, verified)
-    selection = render_selection_panel(selected_files, urls, extraction_results)
-    selection.attrs["hx-swap-oob"] = "outerHTML"
-    return stats, selection
+    # OOB updates for stats content and selection panel (with extraction statuses)
+    stats_oob = render_stats_content(selected_files, urls, extraction_results, verified, oob=True)
+    selection_oob = render_selection_panel(selected_files, urls, extraction_results)
+    selection_oob.attrs["hx-swap-oob"] = "outerHTML"
+    return stats_oob, selection_oob
 
 # %% ../../nbs/routes/verify.ipynb #b9c0d1e2
 def init_verify_router(
