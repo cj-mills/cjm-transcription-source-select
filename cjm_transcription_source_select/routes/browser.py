@@ -222,7 +222,4 @@ def init_browser_router(
         from cjm_transcription_source_select.components.file_browser_panel import render_browser_panel
         return render_browser_panel(render_fn=fb_routers.render)
 
-    # --- Attach accessors for external use (selection routes) ---
-    fb_routers._fb_state_getter = _fb_state_getter
-
     return fb_routers, _render_panel

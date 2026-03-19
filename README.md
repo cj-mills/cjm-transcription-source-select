@@ -56,44 +56,44 @@ graph LR
     utils[utils<br/>utils]
 
     components_file_browser_panel --> html_ids
+    components_preview_panel --> html_ids
     components_preview_panel --> utils
     components_preview_panel --> models
-    components_preview_panel --> html_ids
+    components_selection_panel --> html_ids
     components_selection_panel --> models
     components_selection_panel --> utils
-    components_selection_panel --> html_ids
-    components_stats_panel --> models
     components_stats_panel --> html_ids
+    components_stats_panel --> models
+    components_step_renderer --> html_ids
+    components_step_renderer --> components_stats_panel
     components_step_renderer --> components_selection_panel
     components_step_renderer --> models
-    components_step_renderer --> components_stats_panel
-    components_step_renderer --> html_ids
     components_step_renderer --> components_preview_panel
     routes_browser --> utils
-    routes_browser --> routes_core
-    routes_browser --> components_stats_panel
     routes_browser --> components_selection_panel
-    routes_browser --> models
+    routes_browser --> routes_core
     routes_browser --> components_file_browser_panel
+    routes_browser --> models
+    routes_browser --> components_stats_panel
     routes_core --> models
-    routes_init --> models
     routes_init --> routes_browser
-    routes_init --> routes_preview
-    routes_init --> routes_selection
     routes_init --> services_source_select
+    routes_init --> routes_selection
     routes_init --> routes_verify
+    routes_init --> models
+    routes_init --> routes_preview
     routes_preview --> components_preview_panel
     routes_preview --> routes_core
     routes_preview --> models
     routes_selection --> utils
+    routes_selection --> components_selection_panel
     routes_selection --> routes_core
     routes_selection --> components_stats_panel
-    routes_selection --> components_selection_panel
     routes_selection --> models
-    routes_verify --> models
+    routes_verify --> services_source_select
     routes_verify --> components_selection_panel
     routes_verify --> routes_core
-    routes_verify --> services_source_select
+    routes_verify --> models
     routes_verify --> components_stats_panel
 ```
 
@@ -710,9 +710,9 @@ def render_stats_content(
     urls: SourceSelectUrls,  # URL bundle
     extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # Extraction results
     verified: bool = False,  # Whether selection is verified
-    oob: bool = False,  # Whether to render as OOB innerHTML swap
+    oob: bool = False,  # Whether to render as OOB outerHTML swap
 ) -> Div:  # Stats content (inner content only, no container chrome)
-    "Render stats panel inner content for OOB innerHTML updates."
+    "Render stats panel inner content for OOB updates."
 ```
 
 ``` python

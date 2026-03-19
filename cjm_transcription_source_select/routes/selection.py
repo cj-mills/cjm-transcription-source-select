@@ -189,9 +189,8 @@ def _handle_toggle_all(
     selected_files = step_state.get("selected_files", [])
     extraction_results = step_state.get("extraction_results", {})
 
-    # Get current directory from file browser state
-    browser_state = fb_routers._fb_state_getter()
-    current_dir = Path(browser_state.current_path)
+    # Get current directory from file browser
+    current_dir = Path(fb_routers.current_path())
 
     # List media files in current directory (shallow)
     media_files = []

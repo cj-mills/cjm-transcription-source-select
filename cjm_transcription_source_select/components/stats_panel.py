@@ -43,9 +43,9 @@ def render_stats_content(
     urls: SourceSelectUrls,  # URL bundle
     extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # Extraction results
     verified: bool = False,  # Whether selection is verified
-    oob: bool = False,  # Whether to render as OOB innerHTML swap
+    oob: bool = False,  # Whether to render as OOB outerHTML swap
 ) -> Div:  # Stats content (inner content only, no container chrome)
-    """Render stats panel inner content for OOB innerHTML updates."""
+    """Render stats panel inner content for OOB updates."""
     extraction_results = extraction_results or {}
     audio_count = sum(1 for f in selected_files if f.get("file_type") == "audio")
     video_count = sum(1 for f in selected_files if f.get("file_type") == "video")
@@ -65,7 +65,7 @@ def render_stats_content(
             else:
                 videos_needing_extraction += 1
 
-    oob_attr = {"hx_swap_oob": "innerHTML"} if oob else {}
+    oob_attr = {"hx_swap_oob": "outerHTML"} if oob else {}
 
     # Empty state
     if total == 0:
