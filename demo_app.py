@@ -106,7 +106,7 @@ def main():
     # Initialize routes via unified assembly
     # -------------------------------------------------------------------------
 
-    routers, urls, render_panel_fn = init_source_select_routers(
+    source_select = init_source_select_routers(
         state_store=state_store,
         provider=provider,
         browser_config=browser_config,
@@ -116,7 +116,7 @@ def main():
         prefix="",
     )
 
-    print(f"  Routers initialized ({len(routers)} routers)")
+    print(f"  Routers initialized ({len(source_select.routers)} routers)")
 
     # -------------------------------------------------------------------------
     # Page routes
@@ -168,6 +168,10 @@ def main():
 
         def selection_content():
             session_id = get_session_id_from_sess(sess)
+
+            # Eagerly restore browser state so file browser shows correct directory
+            source_select.restore_state(session_id)
+
             step_state = get_step_state(state_store, workflow_id, session_id)
 
             selected_files = step_state.get("selected_files", [])
@@ -179,8 +183,8 @@ def main():
                 selected_files=selected_files,
                 extraction_results=extraction_results,
                 verified=verified,
-                urls=urls,
-                render_browser_panel_fn=render_panel_fn,
+                urls=source_select.urls,
+                render_browser_panel_fn=source_select.render_panel,
                 selected_folders=selected_folders,
             )
 
@@ -203,7 +207,7 @@ def main():
         theme_selector=True
     )
 
-    register_routes(app, router, *routers)
+    register_routes(app, router, *source_select.routers)
 
     # Debug output
     print("\n" + "=" * 70)

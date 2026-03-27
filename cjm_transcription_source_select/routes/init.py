@@ -14,7 +14,7 @@ from cjm_fasthtml_file_browser.core.config import FileBrowserConfig
 from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
 from cjm_workflow_state.state_store import SQLiteWorkflowStateStore
 
-from ..models import SourceSelectUrls
+from ..models import SourceSelectUrls, SourceSelectResult
 from ..services.source_select import SourceSelectService
 from .browser import init_browser_router
 from .selection import init_selection_router
@@ -30,7 +30,7 @@ def init_source_select_routers(
     service: SourceSelectService,  # Source select service (FFmpeg plugin)
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/source_select",  # Base route prefix
-) -> Tuple[List[APIRouter], SourceSelectUrls, Callable]:  # (routers, urls, render_panel_fn)
+) -> SourceSelectResult:  # Source select result with routers, urls, render, and restore
     """Initialize all source selection routers and populate URL bundle."""
     _home = home_path or provider.get_home_path()
 
@@ -38,7 +38,7 @@ def init_source_select_routers(
     urls = SourceSelectUrls()
 
     # Phase 2: Initialize sub-routers
-    fb_routers, render_panel_fn = init_browser_router(
+    browser = init_browser_router(
         state_store=state_store,
         provider=provider,
         config=browser_config,
@@ -55,7 +55,7 @@ def init_source_select_routers(
         workflow_id=workflow_id,
         urls=urls,
         home_path=_home,
-        fb_routers=fb_routers,
+        fb_routers=browser.routers,
         prefix=f"{prefix}/selection",
     )
 
@@ -83,7 +83,12 @@ def init_source_select_routers(
     urls.media_src = preview_routes["media_src"].to()
     urls.verify = verify_routes["verify"].to()
 
-    # Phase 4: Merge and return
-    routers = [fb_routers.browser, fb_routers.collection, selection_router, preview_router, verify_router]
+    # Phase 4: Assemble and return
+    routers = [browser.routers.browser, browser.routers.collection, selection_router, preview_router, verify_router]
 
-    return routers, urls, render_panel_fn
+    return SourceSelectResult(
+        routers=routers,
+        urls=urls,
+        render_panel=browser.render_panel,
+        restore_state=browser.restore_state,
+    )

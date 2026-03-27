@@ -15,7 +15,7 @@ from cjm_fasthtml_file_browser.providers.local import LocalFileSystemProvider
 from cjm_fasthtml_file_browser.routes.handlers import init_router as init_fb_router, FileBrowserRouters
 from cjm_workflow_state.state_store import SQLiteWorkflowStateStore
 
-from ..models import SourceSelectUrls, SelectedFile
+from ..models import SourceSelectUrls, SelectedFile, BrowserResult
 from ..utils import detect_file_type, is_media_file
 from cjm_transcription_source_select.routes.core import (
     get_step_state, update_step_state, get_session_id_from_sess
@@ -117,29 +117,71 @@ def init_browser_router(
     urls: SourceSelectUrls,  # Mutable URL bundle (for OOB rendering)
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/browser",  # Route prefix
-) -> Tuple[FileBrowserRouters, Callable]:  # (fb_routers, render_panel_fn)
+) -> BrowserResult:  # Browser result with routers, render, and restore
     """Initialize the file browser with selection callbacks."""
     _home = home_path or provider.get_home_path()
 
     # --- File browser state management ---
     _browser_state = BrowserState(current_path=_home)
 
+    # --- Lazy state restoration from persisted store ---
+    _state_restored = [False]
+
+    def _restore_from_persisted(session_id: str) -> None:
+        """Load persisted browser_state on first call."""
+        if _state_restored[0]:
+            return
+        step_state = get_step_state(state_store, workflow_id, session_id)
+
+        # Restore browser state (current_path, sort)
+        persisted_browser = step_state.get("browser_state", {})
+        if persisted_browser:
+            restored = BrowserState.from_dict(persisted_browser)
+            _browser_state.current_path = restored.current_path
+            _browser_state.sort_by = restored.sort_by
+            _browser_state.sort_descending = restored.sort_descending
+            # Selection synced from step state via sync_browser_selection
+
+        # Sync selection from persisted step state
+        selected_files = step_state.get("selected_files", [])
+        selected_folders = step_state.get("selected_folders", [])
+        sync_browser_selection(_browser_state, selected_files, selected_folders)
+
+        _state_restored[0] = True
+
     def _fb_state_getter() -> BrowserState:
         """Get browser state with selection synced from step state."""
         return _browser_state
 
-    def _fb_state_setter(state: BrowserState) -> None:
-        """Save browser navigation/sort state."""
+    def _fb_state_setter(state: BrowserState, request=None) -> None:
+        """Save browser navigation/sort state and persist to state store."""
+        # Lazy restore on first request
+        if request is not None and not _state_restored[0]:
+            _restore_from_persisted(get_session_id_from_sess(request.session))
+
         _browser_state.current_path = state.current_path
         _browser_state.sort_by = state.sort_by
         _browser_state.sort_descending = state.sort_descending
         _browser_state.selection = state.selection
+
+        # Persist browser state
+        if request is not None:
+            session_id = get_session_id_from_sess(request.session)
+            update_step_state(
+                state_store, workflow_id, session_id,
+                browser_state=state.to_dict(),
+                current_directory=state.current_path,
+            )
 
     # --- Selection change callback (receives request for session access) ---
     def _on_selection_change(selected_paths: List[str], request=None) -> Tuple:
         """Handle selection changes from file browser checkboxes."""
         if request is None:
             return ()
+
+        # Lazy restore on first request
+        if not _state_restored[0]:
+            _restore_from_persisted(get_session_id_from_sess(request.session))
 
         sess = request.session
         session_id = get_session_id_from_sess(sess)
@@ -215,11 +257,26 @@ def init_browser_router(
     def _render_panel(
         selected_files: Optional[List[Dict[str, Any]]] = None,
         selected_folders: Optional[List[str]] = None,
+        session_id: Optional[str] = None,
     ) -> Any:
-        """Render the complete browser panel, optionally syncing selection state first."""
+        """Render the complete browser panel, optionally restoring and syncing state first."""
+        # Restore persisted state and rebuild items before rendering
+        if session_id is not None and not _state_restored[0]:
+            _restore_from_persisted(session_id)
+            fb_routers.sync_items()
         if selected_files is not None:
             sync_browser_selection(_browser_state, selected_files, selected_folders or [])
         from cjm_transcription_source_select.components.file_browser_panel import render_browser_panel
         return render_browser_panel(render_fn=fb_routers.render)
 
-    return fb_routers, _render_panel
+    # --- Restore callable for eager state restoration ---
+    def _restore_state(session_id: str) -> None:
+        """Restore persisted browser state (directory, sort, selection)."""
+        _restore_from_persisted(session_id)
+        fb_routers.sync_items()
+
+    return BrowserResult(
+        routers=fb_routers,
+        render_panel=_render_panel,
+        restore_state=_restore_state,
+    )
