@@ -117,7 +117,7 @@ def init_browser_router(
     urls: SourceSelectUrls,  # Mutable URL bundle (for OOB rendering)
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/browser",  # Route prefix
-) -> BrowserResult:  # Browser result with routers, render, and restore
+) -> BrowserResult:  # Browser result with routers, render, restore, and reset
     """Initialize the file browser with selection callbacks."""
     _home = home_path or provider.get_home_path()
 
@@ -275,8 +275,18 @@ def init_browser_router(
         _restore_from_persisted(session_id)
         fb_routers.sync_items()
 
+    # --- Reset callable for clearing in-memory caches ---
+    def _reset_state() -> None:
+        """Reset in-memory state so next restore re-reads from DB."""
+        _state_restored[0] = False
+        _browser_state.current_path = _home
+        _browser_state.sort_by = "name"
+        _browser_state.sort_descending = False
+        _browser_state.selection.selected_paths = []
+
     return BrowserResult(
         routers=fb_routers,
         render_panel=_render_panel,
         restore_state=_restore_state,
+        reset_state=_reset_state,
     )

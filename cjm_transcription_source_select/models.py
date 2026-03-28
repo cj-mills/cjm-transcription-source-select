@@ -69,12 +69,17 @@ def _no_op_restore(session_id: str) -> None:
     """Default no-op for restore_state."""
     pass
 
+def _no_op_reset() -> None:
+    """Default no-op for reset_state."""
+    pass
+
 @dataclass
 class BrowserResult:
     """Return type from init_browser_router."""
     routers: FileBrowserRouters = None    # File browser routers bundle
     render_panel: Callable = None           # (selected_files?, selected_folders?, session_id?) -> rendered panel
     restore_state: Callable = field(default=_no_op_restore)  # (session_id) -> None, restore persisted state
+    reset_state: Callable = field(default=_no_op_reset)  # () -> None, reset in-memory caches
 
 @dataclass
 class SourceSelectResult:
@@ -83,3 +88,4 @@ class SourceSelectResult:
     urls: "SourceSelectUrls" = None                         # URL bundle
     render_panel: Callable = None                           # Render fn for browser panel
     restore_state: Callable = field(default=_no_op_restore)  # (session_id) -> None, restore persisted state
+    reset_state: Callable = field(default=_no_op_reset)  # () -> None, reset in-memory caches

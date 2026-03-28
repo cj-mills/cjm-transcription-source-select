@@ -59,42 +59,42 @@ graph LR
     components_preview_panel --> utils
     components_preview_panel --> html_ids
     components_preview_panel --> models
-    components_selection_panel --> models
     components_selection_panel --> utils
+    components_selection_panel --> models
     components_selection_panel --> html_ids
     components_stats_panel --> models
     components_stats_panel --> html_ids
-    components_step_renderer --> components_selection_panel
+    components_step_renderer --> components_stats_panel
     components_step_renderer --> components_preview_panel
     components_step_renderer --> models
+    components_step_renderer --> components_selection_panel
     components_step_renderer --> html_ids
-    components_step_renderer --> components_stats_panel
-    routes_browser --> components_file_browser_panel
     routes_browser --> models
-    routes_browser --> components_selection_panel
     routes_browser --> components_stats_panel
     routes_browser --> routes_core
+    routes_browser --> components_file_browser_panel
     routes_browser --> utils
+    routes_browser --> components_selection_panel
     routes_core --> models
-    routes_init --> routes_preview
-    routes_init --> services_source_select
-    routes_init --> routes_selection
-    routes_init --> models
     routes_init --> routes_browser
+    routes_init --> routes_selection
+    routes_init --> routes_preview
+    routes_init --> models
     routes_init --> routes_verify
+    routes_init --> services_source_select
     routes_preview --> components_preview_panel
-    routes_preview --> models
     routes_preview --> routes_core
-    routes_selection --> components_selection_panel
+    routes_preview --> models
     routes_selection --> components_stats_panel
     routes_selection --> routes_core
-    routes_selection --> models
     routes_selection --> utils
+    routes_selection --> models
+    routes_selection --> components_selection_panel
+    routes_verify --> components_stats_panel
     routes_verify --> routes_core
+    routes_verify --> components_selection_panel
     routes_verify --> services_source_select
     routes_verify --> models
-    routes_verify --> components_selection_panel
-    routes_verify --> components_stats_panel
 ```
 
 *40 cross-module dependencies detected*
@@ -157,7 +157,7 @@ def init_browser_router(
     urls: SourceSelectUrls,  # Mutable URL bundle (for OOB rendering)
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/browser",  # Route prefix
-) -> BrowserResult:  # Browser result with routers, render, and restore
+) -> BrowserResult:  # Browser result with routers, render, restore, and reset
     "Initialize the file browser with selection callbacks."
 ```
 
@@ -331,7 +331,7 @@ def init_source_select_routers(
     service: SourceSelectService,  # Source select service (FFmpeg plugin)
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/source_select",  # Base route prefix
-) -> SourceSelectResult:  # Source select result with routers, urls, render, and restore
+) -> SourceSelectResult:  # Source select result with routers, urls, render, restore, and reset
     "Initialize all source selection routers and populate URL bundle."
 ```
 
@@ -360,9 +360,18 @@ def _no_op_restore(session_id: str) -> None:
     """Default no-op for restore_state."""
     pass
 
+def _no_op_reset() -> None
+    "Default no-op for restore_state."
+```
+
+``` python
+def _no_op_reset() -> None:
+    """Default no-op for reset_state."""
+    pass
+
 @dataclass
 class BrowserResult
-    "Default no-op for restore_state."
+    "Default no-op for reset_state."
 ```
 
 #### Classes
@@ -405,6 +414,7 @@ class BrowserResult:
     routers: FileBrowserRouters  # File browser routers bundle
     render_panel: Callable  # (selected_files?, selected_folders?, session_id?) -> rendered panel
     restore_state: Callable = field(...)  # (session_id) -> None, restore persisted state
+    reset_state: Callable = field(...)  # () -> None, reset in-memory caches
 ```
 
 ``` python
@@ -416,6 +426,7 @@ class SourceSelectResult:
     urls: 'SourceSelectUrls'  # URL bundle
     render_panel: Callable  # Render fn for browser panel
     restore_state: Callable = field(...)  # (session_id) -> None, restore persisted state
+    reset_state: Callable = field(...)  # () -> None, reset in-memory caches
 ```
 
 ### routes/preview (`preview.ipynb`)

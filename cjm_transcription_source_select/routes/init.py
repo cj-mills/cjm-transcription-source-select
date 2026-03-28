@@ -30,7 +30,7 @@ def init_source_select_routers(
     service: SourceSelectService,  # Source select service (FFmpeg plugin)
     home_path: str = "",  # Home directory for nav buttons
     prefix: str = "/source_select",  # Base route prefix
-) -> SourceSelectResult:  # Source select result with routers, urls, render, and restore
+) -> SourceSelectResult:  # Source select result with routers, urls, render, restore, and reset
     """Initialize all source selection routers and populate URL bundle."""
     _home = home_path or provider.get_home_path()
 
@@ -91,4 +91,5 @@ def init_source_select_routers(
         urls=urls,
         render_panel=browser.render_panel,
         restore_state=browser.restore_state,
+        reset_state=browser.reset_state,
     )
