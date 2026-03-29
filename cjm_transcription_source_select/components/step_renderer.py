@@ -19,7 +19,7 @@ from cjm_fasthtml_tailwind.utilities.typography import font_size, font_weight
 from cjm_fasthtml_tailwind.utilities.layout import overflow, display_tw
 from cjm_fasthtml_tailwind.utilities.borders import border
 from cjm_fasthtml_tailwind.utilities.flexbox_and_grid import (
-    flex_display, flex_direction, grid_display, grid_cols, gap
+    flex_display, flex_direction, grid_display, grid_cols, gap, justify, items
 )
 from cjm_fasthtml_tailwind.utilities.effects import shadow
 from cjm_fasthtml_tailwind.utilities.transitions_and_animation import transition
@@ -33,6 +33,7 @@ from cjm_fasthtml_keyboard_navigation.core.navigation import ScrollOnly
 from cjm_fasthtml_keyboard_navigation.core.focus_zone import FocusZone
 from cjm_fasthtml_keyboard_navigation.core.actions import KeyAction
 from cjm_fasthtml_keyboard_navigation.components.system import render_keyboard_system
+from cjm_fasthtml_keyboard_navigation.components.hints_modal import render_keyboard_hints_modal
 
 # Sortable queue library
 from cjm_fasthtml_sortable_queue.sortable_js import sortable_js_headers, generate_sortable_init_script
@@ -171,6 +172,9 @@ def render_source_select_step(
     # Parent keyboard system (two ghost zones for column switching)
     kb_manager = _create_parent_keyboard_manager()
 
+    # Keyboard hints modal
+    hints_modal, hints_trigger, hints_script = render_keyboard_hints_modal(kb_manager)
+
     url_map = {
         SourceSelectHtmlIds.TOGGLE_ALL_BTN: urls.toggle_all,
     }
@@ -199,6 +203,19 @@ def render_source_select_step(
     )
 
     return Div(
+        # Header with keyboard hints trigger
+        Div(
+            Div(
+                H2("Select Source Files", cls=combine_classes(font_size._3xl, font_weight.bold)),
+                P(
+                    "Browse and select audio files for transcription.",
+                    cls=combine_classes(text_dui.base_content.opacity(70), m.b(4))
+                ),
+            ),
+            hints_trigger,
+            cls=combine_classes(flex_display, items.start, justify.between, m.b(4))
+        ),
+
         # Two-column layout (browser left, selection right)
         Div(
             Div(browser_panel,
@@ -248,6 +265,10 @@ def render_source_select_step(
 
         # Script runner for OOB-triggered JS
         Div(id=SourceSelectHtmlIds.SCRIPT_RUNNER),
+
+        # Keyboard hints modal + ? key listener
+        hints_modal,
+        hints_script,
 
         id=SourceSelectHtmlIds.MAIN_CONTAINER,
         cls=combine_classes(w.full, str(flex_display), flex_direction.col, p(4))
