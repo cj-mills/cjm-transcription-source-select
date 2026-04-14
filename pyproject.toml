@@ -1,11 +1,30 @@
 [build-system]
-requires = ["setuptools>=64.0,<76.0"]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name="cjm-transcription-source-select"
-requires-python=">=3.12"
-dynamic = [ "keywords", "description", "version", "dependencies", "optional-dependencies", "readme", "license", "authors", "classifiers", "entry-points", "scripts", "urls"]
+name = "cjm-transcription-source-select"
+dynamic = ["version"]
+description = "FastHTML source selection component for transcription workflows that provides local file browsing with audio/video preview, selection ordering, and integrated audio extraction from video sources."
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "Apache-2.0"}
+authors = [{name = "Christian J. Mills", email = "9126128+cj-mills@users.noreply.github.com"}]
+keywords = ['nbdev', 'jupyter', 'notebook', 'python']
+classifiers = ["Natural Language :: English", "Intended Audience :: Developers", "Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only"]
+dependencies = ['cjm-plugin-system', 'cjm-media-plugin-system', 'cjm-file-discovery', 'cjm-fasthtml-app-core', 'cjm-fasthtml-tailwind', 'cjm-fasthtml-daisyui', 'cjm_fasthtml_lucide_icons', 'cjm_fasthtml_file_browser', 'cjm_fasthtml_keyboard_navigation', 'cjm_workflow_state', 'cjm_fasthtml_interactions', 'cjm_fasthtml_media_gallery', 'cjm-fasthtml-viewport-fit', 'cjm_fasthtml_sortable_queue']
 
-[tool.uv]
-cache-keys = [{ file = "pyproject.toml" }, { file = "settings.ini" }, { file = "setup.py" }]
+[project.urls]
+Repository = "https://github.com/cj-mills/cjm-transcription-source-select"
+Documentation = "https://cj-mills.github.io/cjm-transcription-source-select"
+
+[project.entry-points.nbdev]
+cjm_transcription_source_select = "cjm_transcription_source_select._modidx:d"
+
+[tool.setuptools.dynamic]
+version = {attr = "cjm_transcription_source_select.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["cjm_transcription_source_select"]
+
+[tool.nbdev]
