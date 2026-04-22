@@ -106,7 +106,7 @@ def render_preview_panel(
             id=SourceSelectHtmlIds.PREVIEW_PANEL,
             cls=combine_classes(
                 collapse, collapse_modifiers.arrow,
-                w.full, bg_dui.base_100, border_radius.box,
+                w.full, bg_dui.base_200, border_radius.box,
                 shadow.lg, shadow_dui.base_300,
                 border_dui.base_300, border(), m.t(4)
             )
@@ -159,7 +159,7 @@ def render_preview_panel(
         id=SourceSelectHtmlIds.PREVIEW_PANEL,
         cls=combine_classes(
             collapse, collapse_modifiers.arrow,
-            w.full, bg_dui.base_100, border_radius.box,
+            w.full, bg_dui.base_200, border_radius.box,
             shadow.lg, shadow_dui.base_300,
             border_dui.base_300, border(), m.t(4)
         )

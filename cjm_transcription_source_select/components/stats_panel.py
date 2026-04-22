@@ -32,7 +32,7 @@ from ..html_ids import SourceSelectHtmlIds
 # %% ../../nbs/components/stats_panel.ipynb #f6a7b8c9
 _STATS_CONTAINER_CLS = combine_classes(
     w.full, m.t(4),
-    bg_dui.base_100, border_radius.box,
+    bg_dui.base_200, border_radius.box,
     shadow.lg, shadow_dui.base_300,
     border_dui.base_300, border()
 )
@@ -90,7 +90,7 @@ def render_stats_content(
         elif videos_extracted == video_count:
             video_detail += " (extracted)"
         parts.append(video_detail)
-    stats_text = " \u00b7 ".join(parts)
+    stats_text = " · ".join(parts)
 
     # Verified state
     if verified:
@@ -98,7 +98,7 @@ def render_stats_content(
             Div(
                 lucide_icon("circle-check", size=5, cls=str(text_dui.success)),
                 Span(
-                    f"Selection verified \u00b7 {total} audio source{'s' if total != 1 else ''} ready",
+                    f"Selection verified · {total} audio source{'s' if total != 1 else ''} ready",
                     cls=combine_classes(font_size.sm, text_dui.success, m.l(2))
                 ),
                 cls=combine_classes(str(flex_display), items.center)
