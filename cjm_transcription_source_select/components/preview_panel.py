@@ -16,21 +16,24 @@ from cjm_fasthtml_daisyui.components.data_display.collapse import (
     collapse, collapse_title, collapse_content, collapse_modifiers
 )
 from cjm_fasthtml_daisyui.components.data_display.badge import badge, badge_styles, badge_sizes
-from cjm_fasthtml_daisyui.utilities.semantic_colors import bg_dui, text_dui, border_dui, shadow_dui
+from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui
 from cjm_fasthtml_daisyui.utilities.border_radius import border_radius
 
 from cjm_fasthtml_tailwind.utilities.spacing import p, m
 from cjm_fasthtml_tailwind.utilities.sizing import w, max_h
 from cjm_fasthtml_tailwind.utilities.typography import font_size, font_weight, truncate
 from cjm_fasthtml_tailwind.utilities.layout import overflow
-from cjm_fasthtml_tailwind.utilities.borders import border, divide
-from cjm_fasthtml_tailwind.utilities.effects import shadow
+from cjm_fasthtml_tailwind.utilities.borders import divide
 from cjm_fasthtml_tailwind.utilities.flexbox_and_grid import (
     flex_display, flex_direction, items, justify, gap, grow
 )
 from cjm_fasthtml_tailwind.core.base import combine_classes
 
 from cjm_fasthtml_lucide_icons.factory import lucide_icon
+
+# Design system recipes (V10 P2 content_panel + I1 inset divider)
+from cjm_fasthtml_design_system.panels import panels
+from cjm_fasthtml_design_system.insets import insets
 
 from ..models import SelectedFile
 from ..html_ids import SourceSelectHtmlIds
@@ -70,7 +73,7 @@ def _render_file_metadata(
         *rows,
         cls=combine_classes(
             str(flex_display), flex_direction.col, gap(1),
-            p(3), bg_dui.base_200.opacity(30), border_radius.box
+            p(3), insets.divider_30, border_radius.box
         )
     )
 
@@ -106,9 +109,7 @@ def render_preview_panel(
             id=SourceSelectHtmlIds.PREVIEW_PANEL,
             cls=combine_classes(
                 collapse, collapse_modifiers.arrow,
-                w.full, bg_dui.base_200, border_radius.box,
-                shadow.lg, shadow_dui.base_300,
-                border_dui.base_300, border(), m.t(4)
+                w.full, panels.content_panel, m.t(4)
             )
         )
 
@@ -159,8 +160,6 @@ def render_preview_panel(
         id=SourceSelectHtmlIds.PREVIEW_PANEL,
         cls=combine_classes(
             collapse, collapse_modifiers.arrow,
-            w.full, bg_dui.base_200, border_radius.box,
-            shadow.lg, shadow_dui.base_300,
-            border_dui.base_300, border(), m.t(4)
+            w.full, panels.content_panel, m.t(4)
         )
     )

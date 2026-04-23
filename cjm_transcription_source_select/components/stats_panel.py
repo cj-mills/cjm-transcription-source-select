@@ -11,14 +11,11 @@ from typing import Any, Dict, List, Optional
 from fasthtml.common import Div, Span, Button, P
 
 from cjm_fasthtml_daisyui.components.actions.button import btn, btn_sizes, btn_colors, btn_styles
-from cjm_fasthtml_daisyui.utilities.semantic_colors import bg_dui, text_dui, border_dui, shadow_dui
-from cjm_fasthtml_daisyui.utilities.border_radius import border_radius
+from cjm_fasthtml_daisyui.utilities.semantic_colors import text_dui
 
 from cjm_fasthtml_tailwind.utilities.spacing import p, m
 from cjm_fasthtml_tailwind.utilities.sizing import w
 from cjm_fasthtml_tailwind.utilities.typography import font_size, font_weight, text_align
-from cjm_fasthtml_tailwind.utilities.borders import border
-from cjm_fasthtml_tailwind.utilities.effects import shadow
 from cjm_fasthtml_tailwind.utilities.flexbox_and_grid import (
     flex_display, flex_direction, items, justify, gap, flex_wrap
 )
@@ -26,15 +23,16 @@ from cjm_fasthtml_tailwind.core.base import combine_classes
 
 from cjm_fasthtml_lucide_icons.factory import lucide_icon
 
+# Design system recipes (V10 P2 content_panel)
+from cjm_fasthtml_design_system.panels import panels
+
 from ..models import SourceSelectUrls, SelectedFile, ExtractionResult
 from ..html_ids import SourceSelectHtmlIds
 
 # %% ../../nbs/components/stats_panel.ipynb #f6a7b8c9
 _STATS_CONTAINER_CLS = combine_classes(
     w.full, m.t(4),
-    bg_dui.base_200, border_radius.box,
-    shadow.lg, shadow_dui.base_300,
-    border_dui.base_300, border()
+    panels.content_panel,
 )
 
 
