@@ -1,0 +1,600 @@
+[
+  {
+    "objectID": "models.html",
+    "href": "models.html",
+    "title": "models",
+    "section": "",
+    "text": "Represents a single audio or video file selected for transcription.\n\n\n\n\ndef SelectedFile(\n    args:VAR_POSITIONAL, kwargs:VAR_KEYWORD\n):\n\nA selected audio or video file.",
+    "crumbs": [
+      "models"
+    ]
+  },
+  {
+    "objectID": "models.html#selectedfile",
+    "href": "models.html#selectedfile",
+    "title": "models",
+    "section": "",
+    "text": "Represents a single audio or video file selected for transcription.\n\n\n\n\ndef SelectedFile(\n    args:VAR_POSITIONAL, kwargs:VAR_KEYWORD\n):\n\nA selected audio or video file.",
+    "crumbs": [
+      "models"
+    ]
+  },
+  {
+    "objectID": "models.html#extractionresult",
+    "href": "models.html#extractionresult",
+    "title": "models",
+    "section": "ExtractionResult",
+    "text": "ExtractionResult\nTracks the audio extraction status for a video file.\n\n\nExtractionResult\n\ndef ExtractionResult(\n    args:VAR_POSITIONAL, kwargs:VAR_KEYWORD\n):\n\nAudio extraction result for a video file.",
+    "crumbs": [
+      "models"
+    ]
+  },
+  {
+    "objectID": "models.html#sourceselectstate",
+    "href": "models.html#sourceselectstate",
+    "title": "models",
+    "section": "SourceSelectState",
+    "text": "SourceSelectState\nTypedDict for the source selection step workflow state. Provides type safety for the state structure stored by cjm-workflow-state.\n\n\nSourceSelectState\n\ndef SourceSelectState(\n    args:VAR_POSITIONAL, kwargs:VAR_KEYWORD\n):\n\nState for the transcription source selection step.",
+    "crumbs": [
+      "models"
+    ]
+  },
+  {
+    "objectID": "models.html#sourceselecturls",
+    "href": "models.html#sourceselecturls",
+    "title": "models",
+    "section": "SourceSelectUrls",
+    "text": "SourceSelectUrls\nURL bundle for source selection route handlers. All fields default to empty strings for safe construction before routes are registered.\n\n\nSourceSelectUrls\n\ndef SourceSelectUrls(\n    remove:str='', reorder:str='', clear:str='', toggle_all:str='', preview:str='', media_src:str='', verify:str='',\n    extraction_status:str=''\n)-&gt;None:\n\nURL bundle for transcription source selection routes.\n\n\n\nSourceSelectResult\n\ndef SourceSelectResult(\n    routers:List=&lt;factory&gt;, urls:SourceSelectUrls=None, render_panel:Callable=None,\n    restore_state:Callable=_no_op_restore, reset_state:Callable=_no_op_reset\n)-&gt;None:\n\nReturn type from init_source_select_routers.\n\n\n\nBrowserResult\n\ndef BrowserResult(\n    routers:FileBrowserRouters=None, render_panel:Callable=None, restore_state:Callable=_no_op_restore,\n    reset_state:Callable=_no_op_reset\n)-&gt;None:\n\nReturn type from init_browser_router.",
+    "crumbs": [
+      "models"
+    ]
+  },
+  {
+    "objectID": "models.html#router-result-types",
+    "href": "models.html#router-result-types",
+    "title": "models",
+    "section": "Router Result Types",
+    "text": "Router Result Types\nDataclass return types for router initialization functions. Using dataclasses instead of tuples makes future additions non-breaking.",
+    "crumbs": [
+      "models"
+    ]
+  },
+  {
+    "objectID": "services/source_select.html",
+    "href": "services/source_select.html",
+    "title": "services/source_select",
+    "section": "",
+    "text": "Thin wrapper around the FFmpeg plugin for file info and audio extraction. Follows the same pattern as SegmentationService and AlignmentService: constructor takes PluginManager + plugin name, execution goes through manager.execute_plugin_async().\n\n\n\n\ndef SourceSelectService(\n    plugin_manager:PluginManager, # Plugin manager instance\n    plugin_name:str='cjm-media-plugin-ffmpeg', # FFmpeg plugin name\n):\n\nService for file metadata and audio extraction from video.",
+    "crumbs": [
+      "services",
+      "services/source_select"
+    ]
+  },
+  {
+    "objectID": "services/source_select.html#sourceselectservice",
+    "href": "services/source_select.html#sourceselectservice",
+    "title": "services/source_select",
+    "section": "",
+    "text": "Thin wrapper around the FFmpeg plugin for file info and audio extraction. Follows the same pattern as SegmentationService and AlignmentService: constructor takes PluginManager + plugin name, execution goes through manager.execute_plugin_async().\n\n\n\n\ndef SourceSelectService(\n    plugin_manager:PluginManager, # Plugin manager instance\n    plugin_name:str='cjm-media-plugin-ffmpeg', # FFmpeg plugin name\n):\n\nService for file metadata and audio extraction from video.",
+    "crumbs": [
+      "services",
+      "services/source_select"
+    ]
+  },
+  {
+    "objectID": "html_ids.html",
+    "href": "html_ids.html",
+    "title": "html_ids",
+    "section": "",
+    "text": "All IDs use the tss- prefix (transcription-source-select) to avoid collisions with other steps in the workflow.\n\n\nSourceSelectHtmlIds\n\ndef SourceSelectHtmlIds(\n    args:VAR_POSITIONAL, kwargs:VAR_KEYWORD\n):\n\nHTML ID constants for the transcription source selection step.",
+    "crumbs": [
+      "html_ids"
+    ]
+  },
+  {
+    "objectID": "components/selection_panel.html#queue-configuration",
+    "href": "components/selection_panel.html#queue-configuration",
+    "title": "components/selection_panel",
+    "section": "Queue Configuration",
+    "text": "Queue Configuration",
+    "crumbs": [
+      "components",
+      "components/selection_panel"
+    ]
+  },
+  {
+    "objectID": "components/selection_panel.html#queue-content-callback",
+    "href": "components/selection_panel.html#queue-content-callback",
+    "title": "components/selection_panel",
+    "section": "Queue Content Callback",
+    "text": "Queue Content Callback",
+    "crumbs": [
+      "components",
+      "components/selection_panel"
+    ]
+  },
+  {
+    "objectID": "components/selection_panel.html#selection-panel-rendering",
+    "href": "components/selection_panel.html#selection-panel-rendering",
+    "title": "components/selection_panel",
+    "section": "Selection Panel Rendering",
+    "text": "Selection Panel Rendering\n\n\nrender_selection_panel\n\ndef render_selection_panel(\n    selected_files:List, # Ordered list of selected files\n    urls:SourceSelectUrls, # URL bundle\n    extraction_results:Optional=None, # video_path → result\n)-&gt;functools.partial(&lt;function ft_hx at 0x7f1403994180&gt;, 'div'): # Selection panel component\n\nRender the selection panel via cjm-fasthtml-sortable-queue.",
+    "crumbs": [
+      "components",
+      "components/selection_panel"
+    ]
+  },
+  {
+    "objectID": "components/stats_panel.html",
+    "href": "components/stats_panel.html",
+    "title": "components/stats_panel",
+    "section": "",
+    "text": "Shows file counts and the verify selection button. After verification, shows a success message.\n\n\n\n\ndef render_stats_panel(\n    selected_files:List, # Current selection\n    urls:SourceSelectUrls, # URL bundle\n    extraction_results:Optional=None, # Extraction results\n    verified:bool=False, # Whether selection is verified\n)-&gt;functools.partial(&lt;function ft_hx at 0x7f4ee4e684a0&gt;, 'div'): # Full stats panel with container chrome\n\nRender the full stats panel (container + content) for initial render.\n\n\n\n\n\ndef render_stats_content(\n    selected_files:List, # Current selection\n    urls:SourceSelectUrls, # URL bundle\n    extraction_results:Optional=None, # Extraction results\n    verified:bool=False, # Whether selection is verified\n    oob:bool=False, # Whether to render as OOB outerHTML swap\n)-&gt;functools.partial(&lt;function ft_hx at 0x7f4ee4e684a0&gt;, 'div'): # Stats content (inner content only, no container chrome)\n\nRender stats panel inner content for OOB updates.",
+    "crumbs": [
+      "components",
+      "components/stats_panel"
+    ]
+  },
+  {
+    "objectID": "components/stats_panel.html#stats-panel",
+    "href": "components/stats_panel.html#stats-panel",
+    "title": "components/stats_panel",
+    "section": "",
+    "text": "Shows file counts and the verify selection button. After verification, shows a success message.\n\n\n\n\ndef render_stats_panel(\n    selected_files:List, # Current selection\n    urls:SourceSelectUrls, # URL bundle\n    extraction_results:Optional=None, # Extraction results\n    verified:bool=False, # Whether selection is verified\n)-&gt;functools.partial(&lt;function ft_hx at 0x7f4ee4e684a0&gt;, 'div'): # Full stats panel with container chrome\n\nRender the full stats panel (container + content) for initial render.\n\n\n\n\n\ndef render_stats_content(\n    selected_files:List, # Current selection\n    urls:SourceSelectUrls, # URL bundle\n    extraction_results:Optional=None, # Extraction results\n    verified:bool=False, # Whether selection is verified\n    oob:bool=False, # Whether to render as OOB outerHTML swap\n)-&gt;functools.partial(&lt;function ft_hx at 0x7f4ee4e684a0&gt;, 'div'): # Stats content (inner content only, no container chrome)\n\nRender stats panel inner content for OOB updates.",
+    "crumbs": [
+      "components",
+      "components/stats_panel"
+    ]
+  },
+  {
+    "objectID": "components/step_renderer.html",
+    "href": "components/step_renderer.html",
+    "title": "components/step_renderer",
+    "section": "",
+    "text": "Composes all panels into a single step view: - Two-column layout: file browser (left) + selection queue (right) - Collapsible preview panel below - Stats / verify panel below - SortableJS scripts at the bottom\n\n\n\n\ndef render_source_select_step(\n    selected_files:List, # Ordered selection\n    extraction_results:Dict, # video_path -&gt; result\n    verified:bool, # Whether selection is verified\n    urls:SourceSelectUrls, # URL bundle\n    render_browser_panel_fn:Callable, # Browser panel render function from init_browser_router\n    selected_folders:Optional=None, # Folder paths for checkbox sync\n)-&gt;functools.partial(&lt;function ft_hx at 0x7fe0ca383ec0&gt;, 'div'): # Complete step view\n\nRender the complete source selection step.",
+    "crumbs": [
+      "components",
+      "components/step_renderer"
+    ]
+  },
+  {
+    "objectID": "components/step_renderer.html#step-renderer",
+    "href": "components/step_renderer.html#step-renderer",
+    "title": "components/step_renderer",
+    "section": "",
+    "text": "Composes all panels into a single step view: - Two-column layout: file browser (left) + selection queue (right) - Collapsible preview panel below - Stats / verify panel below - SortableJS scripts at the bottom\n\n\n\n\ndef render_source_select_step(\n    selected_files:List, # Ordered selection\n    extraction_results:Dict, # video_path -&gt; result\n    verified:bool, # Whether selection is verified\n    urls:SourceSelectUrls, # URL bundle\n    render_browser_panel_fn:Callable, # Browser panel render function from init_browser_router\n    selected_folders:Optional=None, # Folder paths for checkbox sync\n)-&gt;functools.partial(&lt;function ft_hx at 0x7fe0ca383ec0&gt;, 'div'): # Complete step view\n\nRender the complete source selection step.",
+    "crumbs": [
+      "components",
+      "components/step_renderer"
+    ]
+  },
+  {
+    "objectID": "routes/init.html",
+    "href": "routes/init.html",
+    "title": "routes/init",
+    "section": "",
+    "text": "Creates all sub-routers, populates the URL bundle, and returns a unified interface.\nFollows the same 4-phase pattern as cjm-transcript-source-select: 1. Create empty URL bundle 2. Initialize focused sub-routers (each receives the mutable URL bundle) 3. Populate URLs using .to() on route functions 4. Merge and return (routers, urls, merged_routes)\n\n\n\n\ndef init_source_select_routers(\n    state_store:SQLiteWorkflowStateStore, # Workflow state store\n    provider:LocalFileSystemProvider, # File system provider\n    browser_config:FileBrowserConfig, # Browser configuration\n    workflow_id:str, # Workflow identifier\n    service:SourceSelectService, # Source select service (FFmpeg plugin)\n    home_path:str='', # Home directory for nav buttons\n    prefix:str='/source_select', # Base route prefix\n)-&gt;SourceSelectResult: # Source select result with routers, urls, render, restore, and reset\n\nInitialize all source selection routers and populate URL bundle.",
+    "crumbs": [
+      "routes",
+      "routes/init"
+    ]
+  },
+  {
+    "objectID": "routes/init.html#router-assembly",
+    "href": "routes/init.html#router-assembly",
+    "title": "routes/init",
+    "section": "",
+    "text": "Creates all sub-routers, populates the URL bundle, and returns a unified interface.\nFollows the same 4-phase pattern as cjm-transcript-source-select: 1. Create empty URL bundle 2. Initialize focused sub-routers (each receives the mutable URL bundle) 3. Populate URLs using .to() on route functions 4. Merge and return (routers, urls, merged_routes)\n\n\n\n\ndef init_source_select_routers(\n    state_store:SQLiteWorkflowStateStore, # Workflow state store\n    provider:LocalFileSystemProvider, # File system provider\n    browser_config:FileBrowserConfig, # Browser configuration\n    workflow_id:str, # Workflow identifier\n    service:SourceSelectService, # Source select service (FFmpeg plugin)\n    home_path:str='', # Home directory for nav buttons\n    prefix:str='/source_select', # Base route prefix\n)-&gt;SourceSelectResult: # Source select result with routers, urls, render, restore, and reset\n\nInitialize all source selection routers and populate URL bundle.",
+    "crumbs": [
+      "routes",
+      "routes/init"
+    ]
+  },
+  {
+    "objectID": "routes/preview.html",
+    "href": "routes/preview.html",
+    "title": "routes/preview",
+    "section": "",
+    "text": "Serves local media files for HTML5 &lt;audio&gt; and &lt;video&gt; elements. Accepts an absolute file path as a query parameter and returns the file with the appropriate MIME type.",
+    "crumbs": [
+      "routes",
+      "routes/preview"
+    ]
+  },
+  {
+    "objectID": "routes/preview.html#media-source-handler",
+    "href": "routes/preview.html#media-source-handler",
+    "title": "routes/preview",
+    "section": "",
+    "text": "Serves local media files for HTML5 &lt;audio&gt; and &lt;video&gt; elements. Accepts an absolute file path as a query parameter and returns the file with the appropriate MIME type.",
+    "crumbs": [
+      "routes",
+      "routes/preview"
+    ]
+  },
+  {
+    "objectID": "routes/preview.html#preview-handler",
+    "href": "routes/preview.html#preview-handler",
+    "title": "routes/preview",
+    "section": "Preview Handler",
+    "text": "Preview Handler\nRenders the preview panel for a selected file. Looks up the file in the current selection state to get metadata.",
+    "crumbs": [
+      "routes",
+      "routes/preview"
+    ]
+  },
+  {
+    "objectID": "routes/preview.html#router-initialization",
+    "href": "routes/preview.html#router-initialization",
+    "title": "routes/preview",
+    "section": "Router Initialization",
+    "text": "Router Initialization\n\n\ninit_preview_router\n\ndef init_preview_router(\n    state_store:SQLiteWorkflowStateStore, # Workflow state store\n    workflow_id:str, # Workflow identifier\n    urls:SourceSelectUrls, # Mutable URL bundle\n    prefix:str='/preview', # Route prefix\n)-&gt;Tuple: # (router, route_dict)\n\nInitialize preview routes for media serving and preview panel rendering.",
+    "crumbs": [
+      "routes",
+      "routes/preview"
+    ]
+  },
+  {
+    "objectID": "routes/selection.html",
+    "href": "routes/selection.html",
+    "title": "routes/selection",
+    "section": "",
+    "text": "When selection changes via remove/clear/toggle, send targeted OOB checkbox cell updates instead of re-rendering the entire file browser panel.",
+    "crumbs": [
+      "routes",
+      "routes/selection"
+    ]
+  },
+  {
+    "objectID": "routes/selection.html#oob-checkbox-helper",
+    "href": "routes/selection.html#oob-checkbox-helper",
+    "title": "routes/selection",
+    "section": "",
+    "text": "When selection changes via remove/clear/toggle, send targeted OOB checkbox cell updates instead of re-rendering the entire file browser panel.",
+    "crumbs": [
+      "routes",
+      "routes/selection"
+    ]
+  },
+  {
+    "objectID": "routes/selection.html#remove-handler",
+    "href": "routes/selection.html#remove-handler",
+    "title": "routes/selection",
+    "section": "Remove Handler",
+    "text": "Remove Handler",
+    "crumbs": [
+      "routes",
+      "routes/selection"
+    ]
+  },
+  {
+    "objectID": "routes/selection.html#reorder-handler",
+    "href": "routes/selection.html#reorder-handler",
+    "title": "routes/selection",
+    "section": "Reorder Handler",
+    "text": "Reorder Handler",
+    "crumbs": [
+      "routes",
+      "routes/selection"
+    ]
+  },
+  {
+    "objectID": "routes/selection.html#clear-handler",
+    "href": "routes/selection.html#clear-handler",
+    "title": "routes/selection",
+    "section": "Clear Handler",
+    "text": "Clear Handler",
+    "crumbs": [
+      "routes",
+      "routes/selection"
+    ]
+  },
+  {
+    "objectID": "routes/selection.html#toggle-all-handler",
+    "href": "routes/selection.html#toggle-all-handler",
+    "title": "routes/selection",
+    "section": "Toggle All Handler",
+    "text": "Toggle All Handler\nBulk toggle all media files in the file browser’s current directory. If any are unselected, adds them all. If all are already selected, removes them all.\n\n\ninit_selection_router\n\ndef init_selection_router(\n    state_store:SQLiteWorkflowStateStore, # Workflow state store\n    provider:LocalFileSystemProvider, # File system provider (for OOB browser updates)\n    config:FileBrowserConfig, # Browser configuration (for OOB browser updates)\n    workflow_id:str, # Workflow identifier\n    urls:SourceSelectUrls, # Mutable URL bundle\n    home_path:str='', # Home directory path\n    fb_routers:FileBrowserRouters=None, # File browser routers (for OOB sync)\n    prefix:str='/selection', # Route prefix\n)-&gt;Tuple: # (router, route_dict)\n\nInitialize selection queue management routes.",
+    "crumbs": [
+      "routes",
+      "routes/selection"
+    ]
+  },
+  {
+    "objectID": "routes/browser.html",
+    "href": "routes/browser.html",
+    "title": "routes/browser",
+    "section": "",
+    "text": "Lists media files (shallow) in a directory for folder bulk-select.",
+    "crumbs": [
+      "routes",
+      "routes/browser"
+    ]
+  },
+  {
+    "objectID": "routes/browser.html#folder-media-files-helper",
+    "href": "routes/browser.html#folder-media-files-helper",
+    "title": "routes/browser",
+    "section": "",
+    "text": "Lists media files (shallow) in a directory for folder bulk-select.",
+    "crumbs": [
+      "routes",
+      "routes/browser"
+    ]
+  },
+  {
+    "objectID": "routes/browser.html#selection-change-helpers",
+    "href": "routes/browser.html#selection-change-helpers",
+    "title": "routes/browser",
+    "section": "Selection Change Helpers",
+    "text": "Selection Change Helpers\nLogic for toggling files and folders in/out of the selection queue, used by on_selection_change callback.",
+    "crumbs": [
+      "routes",
+      "routes/browser"
+    ]
+  },
+  {
+    "objectID": "routes/browser.html#router-initialization",
+    "href": "routes/browser.html#router-initialization",
+    "title": "routes/browser",
+    "section": "Router Initialization",
+    "text": "Router Initialization\nUses the new init_router from cjm-fasthtml-file-browser which returns FileBrowserRouters (browser + collection routers + render callable). Selection logic is wired via on_selection_change callback.\n\n\ninit_browser_router\n\ndef init_browser_router(\n    state_store:SQLiteWorkflowStateStore, # Workflow state store\n    provider:LocalFileSystemProvider, # File system provider\n    config:FileBrowserConfig, # Browser configuration\n    workflow_id:str, # Workflow identifier\n    urls:SourceSelectUrls, # Mutable URL bundle (for OOB rendering)\n    home_path:str='', # Home directory for nav buttons\n    prefix:str='/browser', # Route prefix\n)-&gt;BrowserResult: # Browser result with routers, render, restore, and reset\n\nInitialize the file browser with selection callbacks.",
+    "crumbs": [
+      "routes",
+      "routes/browser"
+    ]
+  },
+  {
+    "objectID": "routes/core.html",
+    "href": "routes/core.html",
+    "title": "routes/core",
+    "section": "",
+    "text": "These helpers read and write the source selection step state from the workflow state store. The step state lives under state[\"step_states\"][\"source_select\"].\n\n\n\n\ndef get_step_state(\n    state_store:SQLiteWorkflowStateStore, # Workflow state store\n    workflow_id:str, # Workflow identifier\n    session_id:str, # Session identifier\n)-&gt;SourceSelectState: # Current step state (empty dict if not found)\n\nRetrieve the source selection step state.\n\n\n\n\n\ndef update_step_state(\n    state_store:SQLiteWorkflowStateStore, # Workflow state store\n    workflow_id:str, # Workflow identifier\n    session_id:str, # Session identifier\n    fields:VAR_KEYWORD\n)-&gt;SourceSelectState: # Updated step state\n\nUpdate specific fields in the source selection step state.\n\n\n\n\n\ndef get_session_id_from_sess(\n    sess:Any, # Session object from FastHTML\n)-&gt;str: # Session identifier string\n\nExtract session ID from a FastHTML session object.",
+    "crumbs": [
+      "routes",
+      "routes/core"
+    ]
+  },
+  {
+    "objectID": "routes/core.html#state-getters-and-setters",
+    "href": "routes/core.html#state-getters-and-setters",
+    "title": "routes/core",
+    "section": "",
+    "text": "These helpers read and write the source selection step state from the workflow state store. The step state lives under state[\"step_states\"][\"source_select\"].\n\n\n\n\ndef get_step_state(\n    state_store:SQLiteWorkflowStateStore, # Workflow state store\n    workflow_id:str, # Workflow identifier\n    session_id:str, # Session identifier\n)-&gt;SourceSelectState: # Current step state (empty dict if not found)\n\nRetrieve the source selection step state.\n\n\n\n\n\ndef update_step_state(\n    state_store:SQLiteWorkflowStateStore, # Workflow state store\n    workflow_id:str, # Workflow identifier\n    session_id:str, # Session identifier\n    fields:VAR_KEYWORD\n)-&gt;SourceSelectState: # Updated step state\n\nUpdate specific fields in the source selection step state.\n\n\n\n\n\ndef get_session_id_from_sess(\n    sess:Any, # Session object from FastHTML\n)-&gt;str: # Session identifier string\n\nExtract session ID from a FastHTML session object.",
+    "crumbs": [
+      "routes",
+      "routes/core"
+    ]
+  },
+  {
+    "objectID": "routes/verify.html",
+    "href": "routes/verify.html",
+    "title": "routes/verify",
+    "section": "",
+    "text": "Verifies the selection by: 1. Identifying video files that need audio extraction 2. Extracting audio from each video via the FFmpeg plugin (stream copy — nearly instant) 3. Building committed_audio_paths (audio files keep their original path, video files use extracted audio path) 4. Setting verified = True\nAlready-extracted videos (from a previous verify) are not re-extracted.",
+    "crumbs": [
+      "routes",
+      "routes/verify"
+    ]
+  },
+  {
+    "objectID": "routes/verify.html#verify-handler",
+    "href": "routes/verify.html#verify-handler",
+    "title": "routes/verify",
+    "section": "",
+    "text": "Verifies the selection by: 1. Identifying video files that need audio extraction 2. Extracting audio from each video via the FFmpeg plugin (stream copy — nearly instant) 3. Building committed_audio_paths (audio files keep their original path, video files use extracted audio path) 4. Setting verified = True\nAlready-extracted videos (from a previous verify) are not re-extracted.",
+    "crumbs": [
+      "routes",
+      "routes/verify"
+    ]
+  },
+  {
+    "objectID": "routes/verify.html#router-initialization",
+    "href": "routes/verify.html#router-initialization",
+    "title": "routes/verify",
+    "section": "Router Initialization",
+    "text": "Router Initialization\n\n\ninit_verify_router\n\ndef init_verify_router(\n    state_store:SQLiteWorkflowStateStore, # Workflow state store\n    workflow_id:str, # Workflow identifier\n    urls:SourceSelectUrls, # Mutable URL bundle\n    service:SourceSelectService, # Source select service\n    prefix:str='/verify', # Route prefix\n)-&gt;Tuple: # (router, route_dict)\n\nInitialize verify route for selection verification and audio extraction.",
+    "crumbs": [
+      "routes",
+      "routes/verify"
+    ]
+  },
+  {
+    "objectID": "components/preview_panel.html",
+    "href": "components/preview_panel.html",
+    "title": "components/preview_panel",
+    "section": "",
+    "text": "Shows path, format, size, and duration for the previewed file.",
+    "crumbs": [
+      "components",
+      "components/preview_panel"
+    ]
+  },
+  {
+    "objectID": "components/preview_panel.html#file-metadata-display",
+    "href": "components/preview_panel.html#file-metadata-display",
+    "title": "components/preview_panel",
+    "section": "",
+    "text": "Shows path, format, size, and duration for the previewed file.",
+    "crumbs": [
+      "components",
+      "components/preview_panel"
+    ]
+  },
+  {
+    "objectID": "components/preview_panel.html#preview-panel",
+    "href": "components/preview_panel.html#preview-panel",
+    "title": "components/preview_panel",
+    "section": "Preview Panel",
+    "text": "Preview Panel\nCollapsible panel that displays the media player and file metadata. Uses DaisyUI’s collapse component with a checkbox to control open/close state.\n\n\nrender_preview_panel\n\ndef render_preview_panel(\n    selected_file:Optional=None, # File to preview (None for empty state)\n    media_src_url:str='', # Base URL for media file serving\n    is_open:bool=False, # Whether panel starts open\n)-&gt;functools.partial(&lt;function ft_hx at 0x7f3808da7f60&gt;, 'div'): # Preview panel component\n\nRender a collapsible preview panel with audio/video player.",
+    "crumbs": [
+      "components",
+      "components/preview_panel"
+    ]
+  },
+  {
+    "objectID": "components/file_browser_panel.html",
+    "href": "components/file_browser_panel.html",
+    "title": "components/file_browser_panel",
+    "section": "",
+    "text": "Audio and video extensions in dot-less format for FilterConfig.",
+    "crumbs": [
+      "components",
+      "components/file_browser_panel"
+    ]
+  },
+  {
+    "objectID": "components/file_browser_panel.html#media-extensions",
+    "href": "components/file_browser_panel.html#media-extensions",
+    "title": "components/file_browser_panel",
+    "section": "",
+    "text": "Audio and video extensions in dot-less format for FilterConfig.",
+    "crumbs": [
+      "components",
+      "components/file_browser_panel"
+    ]
+  },
+  {
+    "objectID": "components/file_browser_panel.html#browser-configuration",
+    "href": "components/file_browser_panel.html#browser-configuration",
+    "title": "components/file_browser_panel",
+    "section": "Browser Configuration",
+    "text": "Browser Configuration\nCreates a FileBrowserConfig for audio/video file selection. Uses the cjm-fasthtml-file-browser library’s built-in selection UI.\n\n\ncreate_media_browser_config\n\ndef create_media_browser_config(\n    \n)-&gt;FileBrowserConfig: # Configured for audio/video file selection\n\nCreate file browser config for audio/video file selection with folder bulk-select.",
+    "crumbs": [
+      "components",
+      "components/file_browser_panel"
+    ]
+  },
+  {
+    "objectID": "components/file_browser_panel.html#browser-state",
+    "href": "components/file_browser_panel.html#browser-state",
+    "title": "components/file_browser_panel",
+    "section": "Browser State",
+    "text": "Browser State\nHelpers to create and restore BrowserState from step state.\n\n\nget_browser_state\n\ndef get_browser_state(\n    step_state:Dict, # Current step state\n    default_path:str='', # Default directory if no state exists\n)-&gt;BrowserState: # Browser state for the file browser\n\nGet or create BrowserState from step state.\n\n\n\nsync_browser_selection\n\ndef sync_browser_selection(\n    browser_state:BrowserState, # Browser state to update\n    selected_files:List, # Current selected_files from step state\n    selected_folders:Optional=None, # Folder paths toggled for bulk select\n)-&gt;None: # Modifies browser_state in place\n\nSync browser selection state with selected files and folders.",
+    "crumbs": [
+      "components",
+      "components/file_browser_panel"
+    ]
+  },
+  {
+    "objectID": "components/file_browser_panel.html#render-browser-panel",
+    "href": "components/file_browser_panel.html#render-browser-panel",
+    "title": "components/file_browser_panel",
+    "section": "Render Browser Panel",
+    "text": "Render Browser Panel\nWraps the file browser library’s FileBrowserRouters.render callable in a flex container for proper height constraint propagation.\n\n\nrender_browser_panel\n\ndef render_browser_panel(\n    render_fn:Callable, # FileBrowserRouters.render callable\n)-&gt;Any: # Rendered file browser in a flex container\n\nRender the file browser panel using the library’s self-contained VC component.",
+    "crumbs": [
+      "components",
+      "components/file_browser_panel"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "cjm-transcription-source-select",
+    "section": "",
+    "text": "pip install cjm_transcription_source_select",
+    "crumbs": [
+      "cjm-transcription-source-select"
+    ]
+  },
+  {
+    "objectID": "index.html#install",
+    "href": "index.html#install",
+    "title": "cjm-transcription-source-select",
+    "section": "",
+    "text": "pip install cjm_transcription_source_select",
+    "crumbs": [
+      "cjm-transcription-source-select"
+    ]
+  },
+  {
+    "objectID": "index.html#project-structure",
+    "href": "index.html#project-structure",
+    "title": "cjm-transcription-source-select",
+    "section": "Project Structure",
+    "text": "Project Structure\nnbs/\n├── components/ (6)\n│   ├── file_browser_panel.ipynb  # File browser panel configuration and rendering for browsing local audio/video files\n│   ├── helpers.ipynb             # Shared helper functions for the transcription source selection step\n│   ├── preview_panel.ipynb       # Collapsible preview panel with audio/video player and file metadata\n│   ├── selection_panel.ipynb     # Selection panel component showing selected files with drag-drop reordering\n│   ├── stats_panel.ipynb         # Stats summary and verify selection button\n│   └── step_renderer.ipynb       # Main step renderer combining all panels for the source selection step\n├── routes/ (6)\n│   ├── browser.ipynb    # Route handlers for file browser navigation and file selection\n│   ├── core.ipynb       # State management helpers for the transcription source selection step\n│   ├── init.ipynb       # Router assembly — creates all sub-routers, populates URL bundle, returns unified interface\n│   ├── preview.ipynb    # Route handlers for media file serving and preview panel rendering\n│   ├── selection.ipynb  # Route handlers for selection queue management (remove, reorder, clear)\n│   └── verify.ipynb     # Route handler for verify selection + audio extraction from video sources\n├── services/ (1)\n│   └── source_select.ipynb  # Service layer for file operations and audio extraction from video via FFmpeg plugin\n├── html_ids.ipynb  # HTML ID constants for the transcription source selection step\n├── models.ipynb    # Data models and URL bundles for the transcription source selection step\n└── utils.ipynb     # Utility functions for file type detection, duration formatting, and extension filtering\nTotal: 16 notebooks across 3 directories",
+    "crumbs": [
+      "cjm-transcription-source-select"
+    ]
+  },
+  {
+    "objectID": "index.html#module-dependencies",
+    "href": "index.html#module-dependencies",
+    "title": "cjm-transcription-source-select",
+    "section": "Module Dependencies",
+    "text": "Module Dependencies\ngraph LR\n    components_file_browser_panel[components.file_browser_panel&lt;br/&gt;components/file_browser_panel]\n    components_helpers[components.helpers&lt;br/&gt;components/helpers]\n    components_preview_panel[components.preview_panel&lt;br/&gt;components/preview_panel]\n    components_selection_panel[components.selection_panel&lt;br/&gt;components/selection_panel]\n    components_stats_panel[components.stats_panel&lt;br/&gt;components/stats_panel]\n    components_step_renderer[components.step_renderer&lt;br/&gt;components/step_renderer]\n    html_ids[html_ids&lt;br/&gt;html_ids]\n    models[models&lt;br/&gt;models]\n    routes_browser[routes.browser&lt;br/&gt;routes/browser]\n    routes_core[routes.core&lt;br/&gt;routes/core]\n    routes_init[routes.init&lt;br/&gt;routes/init]\n    routes_preview[routes.preview&lt;br/&gt;routes/preview]\n    routes_selection[routes.selection&lt;br/&gt;routes/selection]\n    routes_verify[routes.verify&lt;br/&gt;routes/verify]\n    services_source_select[services.source_select&lt;br/&gt;services/source_select]\n    utils[utils&lt;br/&gt;utils]\n\n    components_file_browser_panel --&gt; html_ids\n    components_preview_panel --&gt; html_ids\n    components_preview_panel --&gt; utils\n    components_preview_panel --&gt; models\n    components_selection_panel --&gt; html_ids\n    components_selection_panel --&gt; models\n    components_selection_panel --&gt; utils\n    components_stats_panel --&gt; html_ids\n    components_stats_panel --&gt; models\n    components_step_renderer --&gt; html_ids\n    components_step_renderer --&gt; components_selection_panel\n    components_step_renderer --&gt; models\n    components_step_renderer --&gt; components_stats_panel\n    components_step_renderer --&gt; components_preview_panel\n    routes_browser --&gt; utils\n    routes_browser --&gt; models\n    routes_browser --&gt; components_file_browser_panel\n    routes_browser --&gt; routes_core\n    routes_browser --&gt; components_stats_panel\n    routes_browser --&gt; components_selection_panel\n    routes_core --&gt; models\n    routes_init --&gt; routes_verify\n    routes_init --&gt; models\n    routes_init --&gt; routes_browser\n    routes_init --&gt; routes_selection\n    routes_init --&gt; services_source_select\n    routes_init --&gt; routes_preview\n    routes_preview --&gt; models\n    routes_preview --&gt; components_preview_panel\n    routes_preview --&gt; routes_core\n    routes_selection --&gt; utils\n    routes_selection --&gt; models\n    routes_selection --&gt; routes_core\n    routes_selection --&gt; components_stats_panel\n    routes_selection --&gt; components_selection_panel\n    routes_verify --&gt; routes_core\n    routes_verify --&gt; models\n    routes_verify --&gt; components_stats_panel\n    routes_verify --&gt; services_source_select\n    routes_verify --&gt; components_selection_panel\n40 cross-module dependencies detected",
+    "crumbs": [
+      "cjm-transcription-source-select"
+    ]
+  },
+  {
+    "objectID": "index.html#cli-reference",
+    "href": "index.html#cli-reference",
+    "title": "cjm-transcription-source-select",
+    "section": "CLI Reference",
+    "text": "CLI Reference\nNo CLI commands found in this project.",
+    "crumbs": [
+      "cjm-transcription-source-select"
+    ]
+  },
+  {
+    "objectID": "index.html#module-overview",
+    "href": "index.html#module-overview",
+    "title": "cjm-transcription-source-select",
+    "section": "Module Overview",
+    "text": "Module Overview\nDetailed documentation for each module in the project:\n\nroutes/browser (browser.ipynb)\n\nRoute handlers for file browser navigation and file selection\n\n\nImport\nfrom cjm_transcription_source_select.routes.browser import (\n    init_browser_router\n)\n\n\nFunctions\ndef _list_media_in_folder(\n    folder_path: str,  # Directory to scan for media files\n) -&gt; List[SelectedFile]:  # Media files found as SelectedFile dicts\n    \"List media files in a directory (shallow, no recursion).\"\ndef _toggle_file(\n    path: str,  # File path to toggle\n    selected_files: List[Dict[str, Any]],  # Current selection (mutated)\n    selected_folders: List[str],  # Current folder selections (mutated)\n    extraction_results: Dict[str, Any],  # Extraction results (mutated)\n) -&gt; None:  # Mutates lists in place\n    \"Toggle a single file in/out of the selection.\"\ndef _toggle_folder(\n    path: str,  # Folder path to toggle\n    selected_files: List[Dict[str, Any]],  # Current selection (mutated)\n    selected_folders: List[str],  # Current folder selections (mutated)\n    extraction_results: Dict[str, Any],  # Extraction results (mutated)\n) -&gt; None:  # Mutates lists in place\n    \"Toggle all media files in a folder (shallow bulk-select).\"\ndef init_browser_router(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    provider: LocalFileSystemProvider,  # File system provider\n    config: FileBrowserConfig,  # Browser configuration\n    workflow_id: str,  # Workflow identifier\n    urls: SourceSelectUrls,  # Mutable URL bundle (for OOB rendering)\n    home_path: str = \"\",  # Home directory for nav buttons\n    prefix: str = \"/browser\",  # Route prefix\n) -&gt; BrowserResult:  # Browser result with routers, render, restore, and reset\n    \"Initialize the file browser with selection callbacks.\"\n\n\n\nroutes/core (core.ipynb)\n\nState management helpers for the transcription source selection step\n\n\nImport\nfrom cjm_transcription_source_select.routes.core import (\n    STEP_KEY,\n    get_step_state,\n    update_step_state,\n    get_session_id_from_sess\n)\n\n\nFunctions\ndef get_step_state(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    workflow_id: str,  # Workflow identifier\n    session_id: str,  # Session identifier\n) -&gt; SourceSelectState:  # Current step state (empty dict if not found)\n    \"Retrieve the source selection step state.\"\ndef update_step_state(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    workflow_id: str,  # Workflow identifier\n    session_id: str,  # Session identifier\n    **fields,  # Fields to update in the step state\n) -&gt; SourceSelectState:  # Updated step state\n    \"Update specific fields in the source selection step state.\"\ndef get_session_id_from_sess(\n    sess: Any  # Session object from FastHTML\n) -&gt; str:  # Session identifier string\n    \"Extract session ID from a FastHTML session object.\"\n\n\nVariables\nSTEP_KEY = 'source_select'\n\n\n\ncomponents/file_browser_panel (file_browser_panel.ipynb)\n\nFile browser panel configuration and rendering for browsing local audio/video files\n\n\nImport\nfrom cjm_transcription_source_select.components.file_browser_panel import (\n    AUDIO_FILTER_EXTENSIONS,\n    VIDEO_FILTER_EXTENSIONS,\n    MEDIA_FILTER_EXTENSIONS,\n    create_media_browser_config,\n    get_browser_state,\n    sync_browser_selection,\n    render_browser_panel\n)\n\n\nFunctions\ndef create_media_browser_config() -&gt; FileBrowserConfig:  # Configured for audio/video file selection\n    \"Create file browser config for audio/video file selection with folder bulk-select.\"\ndef get_browser_state(\n    step_state: Dict[str, Any],  # Current step state\n    default_path: str = \"\",  # Default directory if no state exists\n) -&gt; BrowserState:  # Browser state for the file browser\n    \"Get or create BrowserState from step state.\"\ndef sync_browser_selection(\n    browser_state: BrowserState,  # Browser state to update\n    selected_files: List[Dict[str, Any]],  # Current selected_files from step state\n    selected_folders: Optional[List[str]] = None,  # Folder paths toggled for bulk select\n) -&gt; None:  # Modifies browser_state in place\n    \"Sync browser selection state with selected files and folders.\"\ndef render_browser_panel(\n    render_fn: Callable,  # FileBrowserRouters.render callable\n) -&gt; Any:  # Rendered file browser in a flex container\n    \"Render the file browser panel using the library's self-contained VC component.\"\n\n\nVariables\nAUDIO_FILTER_EXTENSIONS = [8 items]\nVIDEO_FILTER_EXTENSIONS = [7 items]\nMEDIA_FILTER_EXTENSIONS\n\n\n\nhtml_ids (html_ids.ipynb)\n\nHTML ID constants for the transcription source selection step\n\n\nImport\nfrom cjm_transcription_source_select.html_ids import (\n    SourceSelectHtmlIds\n)\n\n\nClasses\nclass SourceSelectHtmlIds:\n    \"HTML ID constants for the transcription source selection step.\"\n    \n    def as_selector(\n            id_str: str  # The HTML ID to convert\n        ) -&gt; str:  # CSS selector with # prefix\n        \"Convert an ID to a CSS selector format.\"\n    \n    def file_item(\n            file_path: str  # Absolute path to the file\n        ) -&gt; str:  # HTML ID for the file item in the browser\n        \"Generate HTML ID for a file item in the browser list.\"\n    \n    def selection_item(\n            file_path: str  # Absolute path to the file\n        ) -&gt; str:  # HTML ID for the selection list item\n        \"Generate HTML ID for a selected file item.\"\n    \n    def extraction_status(\n            file_path: str  # Absolute path to the video file\n        ) -&gt; str:  # HTML ID for the extraction status indicator\n        \"Generate HTML ID for a video file's extraction status.\"\n\n\n\nroutes/init (init.ipynb)\n\nRouter assembly — creates all sub-routers, populates URL bundle, returns unified interface\n\n\nImport\nfrom cjm_transcription_source_select.routes.init import (\n    init_source_select_routers\n)\n\n\nFunctions\ndef init_source_select_routers(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    provider: LocalFileSystemProvider,  # File system provider\n    browser_config: FileBrowserConfig,  # Browser configuration\n    workflow_id: str,  # Workflow identifier\n    service: SourceSelectService,  # Source select service (FFmpeg plugin)\n    home_path: str = \"\",  # Home directory for nav buttons\n    prefix: str = \"/source_select\",  # Base route prefix\n) -&gt; SourceSelectResult:  # Source select result with routers, urls, render, restore, and reset\n    \"Initialize all source selection routers and populate URL bundle.\"\n\n\n\nmodels (models.ipynb)\n\nData models and URL bundles for the transcription source selection step\n\n\nImport\nfrom cjm_transcription_source_select.models import (\n    SelectedFile,\n    ExtractionResult,\n    SourceSelectState,\n    SourceSelectUrls,\n    BrowserResult,\n    SourceSelectResult\n)\n\n\nFunctions\ndef _no_op_restore(session_id: str) -&gt; None:\n    \"\"\"Default no-op for restore_state.\"\"\"\n    pass\n\ndef _no_op_reset() -&gt; None\n    \"Default no-op for restore_state.\"\ndef _no_op_reset() -&gt; None:\n    \"\"\"Default no-op for reset_state.\"\"\"\n    pass\n\n@dataclass\nclass BrowserResult\n    \"Default no-op for reset_state.\"\n\n\nClasses\nclass SelectedFile(TypedDict):\n    \"A selected audio or video file.\"\nclass ExtractionResult(TypedDict):\n    \"Audio extraction result for a video file.\"\nclass SourceSelectState(TypedDict):\n    \"State for the transcription source selection step.\"\n@dataclass\nclass SourceSelectUrls:\n    \"URL bundle for transcription source selection routes.\"\n    \n    remove: str = ''  # Remove file from selection\n    reorder: str = ''  # Reorder selection (SortableJS)\n    clear: str = ''  # Clear all selected files\n    toggle_all: str = ''  # Toggle all media in current directory\n    preview: str = ''  # Preview a file (render player)\n    media_src: str = ''  # Serve a local media file for HTML5 players\n    verify: str = ''  # Verify selection + trigger extraction\n    extraction_status: str = ''  # Poll extraction status\n@dataclass\nclass BrowserResult:\n    \"Return type from init_browser_router.\"\n    \n    routers: FileBrowserRouters  # File browser routers bundle\n    render_panel: Callable  # (selected_files?, selected_folders?, session_id?) -&gt; rendered panel\n    restore_state: Callable = field(...)  # (session_id) -&gt; None, restore persisted state\n    reset_state: Callable = field(...)  # () -&gt; None, reset in-memory caches\n@dataclass\nclass SourceSelectResult:\n    \"Return type from init_source_select_routers.\"\n    \n    routers: List[APIRouter] = field(...)  # All routers to register\n    urls: 'SourceSelectUrls'  # URL bundle\n    render_panel: Callable  # Render fn for browser panel\n    restore_state: Callable = field(...)  # (session_id) -&gt; None, restore persisted state\n    reset_state: Callable = field(...)  # () -&gt; None, reset in-memory caches\n\n\n\nroutes/preview (preview.ipynb)\n\nRoute handlers for media file serving and preview panel rendering\n\n\nImport\nfrom cjm_transcription_source_select.routes.preview import (\n    init_preview_router\n)\n\n\nFunctions\ndef _handle_media_src(\n    path: str,  # Absolute path to the media file\n) -&gt; Response:  # FileResponse or 404\n    \"Serve a local media file with appropriate MIME type.\"\ndef _handle_preview(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    workflow_id: str,  # Workflow identifier\n    urls: SourceSelectUrls,  # URL bundle\n    sess,  # FastHTML session\n    path: str,  # File path to preview\n):  # Rendered preview panel\n    \"Render the preview panel for a selected file.\"\ndef init_preview_router(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    workflow_id: str,  # Workflow identifier\n    urls: SourceSelectUrls,  # Mutable URL bundle\n    prefix: str = \"/preview\",  # Route prefix\n) -&gt; Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)\n    \"Initialize preview routes for media serving and preview panel rendering.\"\n\n\n\ncomponents/preview_panel (preview_panel.ipynb)\n\nCollapsible preview panel with audio/video player and file metadata\n\n\nImport\nfrom cjm_transcription_source_select.components.preview_panel import (\n    render_preview_panel\n)\n\n\nFunctions\ndef _render_metadata_row(\n    label: str,  # Label text\n    value: str,  # Value text\n) -&gt; Div:  # Metadata row element\n    \"Render a single metadata label-value pair.\"\ndef _render_file_metadata(\n    selected_file: SelectedFile,  # File to display metadata for\n) -&gt; Div:  # Metadata section\n    \"Render file metadata section.\"\ndef render_preview_panel(\n    selected_file: Optional[SelectedFile] = None,  # File to preview (None for empty state)\n    media_src_url: str = \"\",  # Base URL for media file serving\n    is_open: bool = False,  # Whether panel starts open\n) -&gt; Div:  # Preview panel component\n    \"Render a collapsible preview panel with audio/video player.\"\n\n\n\nroutes/selection (selection.ipynb)\n\nRoute handlers for selection queue management (remove, reorder, clear)\n\n\nImport\nfrom cjm_transcription_source_select.routes.selection import (\n    DEBUG_REORDER,\n    init_selection_router\n)\n\n\nFunctions\ndef _render_oob_checkboxes(\n    fb_routers: FileBrowserRouters,  # File browser routers\n    selected_files: list,            # Current selected files\n    selected_folders: list,          # Current selected folders\n    changed_paths: list,             # Paths whose checkbox state changed\n) -&gt; tuple:  # OOB cell elements for visible checkboxes\n    \"Sync selection state and return targeted checkbox OOBs for changed paths.\"\ndef _handle_remove(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    workflow_id: str,  # Workflow identifier\n    urls: SourceSelectUrls,  # URL bundle\n    fb_routers: FileBrowserRouters,  # File browser routers\n    sess,  # FastHTML session\n    key: str,  # Item key (file path) to remove\n):  # OOB tuple (selection panel, checkbox OOBs, stats content)\n    \"Remove a file from the selection by key.\"\nasync def _handle_reorder(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    workflow_id: str,  # Workflow identifier\n    urls: SourceSelectUrls,  # URL bundle\n    request,  # FastHTML request\n    sess,  # FastHTML session\n):  # Rendered selection panel\n    \"Reorder selected files based on SortableJS drag or keyboard Shift+Arrow.\"\ndef _handle_clear(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    workflow_id: str,  # Workflow identifier\n    urls: SourceSelectUrls,  # URL bundle\n    fb_routers: FileBrowserRouters,  # File browser routers\n    sess,  # FastHTML session\n):  # OOB tuple (selection panel, checkbox OOBs, stats content)\n    \"Clear all selected files and folders.\"\ndef _handle_toggle_all(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    workflow_id: str,  # Workflow identifier\n    urls: SourceSelectUrls,  # URL bundle\n    fb_routers: FileBrowserRouters,  # File browser routers\n    sess,  # FastHTML session\n):  # OOB tuple (selection panel, checkbox OOBs, stats content)\n    \"Toggle all media files in the current directory.\"\ndef init_selection_router(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    provider: LocalFileSystemProvider,  # File system provider (for OOB browser updates)\n    config: FileBrowserConfig,  # Browser configuration (for OOB browser updates)\n    workflow_id: str,  # Workflow identifier\n    urls: SourceSelectUrls,  # Mutable URL bundle\n    home_path: str = \"\",  # Home directory path\n    fb_routers: FileBrowserRouters = None,  # File browser routers (for OOB sync)\n    prefix: str = \"/selection\",  # Route prefix\n) -&gt; Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)\n    \"Initialize selection queue management routes.\"\n\n\nVariables\nDEBUG_REORDER = False\n\n\n\ncomponents/selection_panel (selection_panel.ipynb)\n\nSelection panel component showing selected files with drag-drop reordering\n\n\nImport\nfrom cjm_transcription_source_select.components.selection_panel import (\n    TSS_QUEUE_PREFIX,\n    TSS_QUEUE_CONFIG,\n    TSS_QUEUE_IDS,\n    render_selection_panel\n)\n\n\nFunctions\ndef _render_type_badge(\n    file_type: str,  # \"audio\" or \"video\"\n) -&gt; Span:  # Badge component\n    \"Render a type badge for a selected file.\"\ndef _render_extraction_status(\n    extraction_result: Optional[ExtractionResult],  # Extraction result for this video file\n    file_path: str,  # File path for HTML ID\n) -&gt; Optional[Span]:  # Status indicator or None\n    \"Render extraction status indicator for a video file.\"\ndef _make_render_content(\n    urls: SourceSelectUrls,  # URL bundle for preview button\n    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # video_path → result\n):  # Returns a render_content callback\n    \"Create a render_content callback with access to URLs and extraction results.\"\ndef _render_queue_empty() -&gt; Any:  # Empty state element\n    \"\"\"Render the custom empty state for the file selection queue.\"\"\"\n    return P(\n        \"Click files in the browser to select them\",\n        cls=combine_classes(text_dui.base_content.opacity(50), text_align.center, font_size.md, p(2))\n    )\n\n\ndef render_selection_panel(\n    selected_files: List[SelectedFile],  # Ordered list of selected files\n    urls: SourceSelectUrls,  # URL bundle\n    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # video_path → result\n) -&gt; Div:  # Selection panel component\n    \"Render the custom empty state for the file selection queue.\"\ndef render_selection_panel(\n    selected_files: List[SelectedFile],  # Ordered list of selected files\n    urls: SourceSelectUrls,  # URL bundle\n    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # video_path → result\n) -&gt; Div:  # Selection panel component\n    \"Render the selection panel via cjm-fasthtml-sortable-queue.\"\n\n\nVariables\nTSS_QUEUE_PREFIX = 'tss'\nTSS_QUEUE_CONFIG\nTSS_QUEUE_IDS\n\n\n\nservices/source_select (source_select.ipynb)\n\nService layer for file operations and audio extraction from video via FFmpeg plugin\n\n\nImport\nfrom cjm_transcription_source_select.services.source_select import (\n    SourceSelectService\n)\n\n\nClasses\nclass SourceSelectService:\n    def __init__(self,\n                 plugin_manager: PluginManager,  # Plugin manager instance\n                 plugin_name: str = \"cjm-media-plugin-ffmpeg\",  # FFmpeg plugin name\n                )\n    \"Service for file metadata and audio extraction from video.\"\n    \n    def __init__(self,\n                     plugin_manager: PluginManager,  # Plugin manager instance\n                     plugin_name: str = \"cjm-media-plugin-ffmpeg\",  # FFmpeg plugin name\n                    )\n    \n    def is_available(self) -&gt; bool:  # True if plugin is loaded\n            \"\"\"Check if the FFmpeg plugin is loaded.\"\"\"\n            return self._manager.get_plugin(self._plugin_name) is not None\n    \n        def ensure_loaded(self,\n                          config: Optional[Dict[str, Any]] = None,  # Plugin config override\n                         ) -&gt; bool:  # True if plugin is now loaded\n        \"Check if the FFmpeg plugin is loaded.\"\n    \n    def ensure_loaded(self,\n                          config: Optional[Dict[str, Any]] = None,  # Plugin config override\n                         ) -&gt; bool:  # True if plugin is now loaded\n        \"Ensure the FFmpeg plugin is loaded, loading it if necessary.\"\n    \n    async def get_file_info(\n            self,\n            file_path: str,  # Path to media file\n        ) -&gt; Dict[str, Any]:  # MediaMetadata dict (duration, streams, etc.)\n        \"Get media file metadata via FFmpeg plugin.\"\n    \n    async def extract_audio(\n            self,\n            video_path: str,  # Path to video file\n        ) -&gt; Dict[str, Any]:  # {job_id, output_path, duration, codec, stream_copy}\n        \"Extract audio from a video file via FFmpeg plugin (stream copy).\"\n    \n    def extract_audio_sync(\n            self,\n            video_path: str,  # Path to video file\n        ) -&gt; Dict[str, Any]:  # {job_id, output_path, duration, codec, stream_copy}\n        \"Synchronous wrapper for extract_audio.\"\n\n\n\ncomponents/stats_panel (stats_panel.ipynb)\n\nStats summary and verify selection button\n\n\nImport\nfrom cjm_transcription_source_select.components.stats_panel import (\n    render_stats_content,\n    render_stats_panel\n)\n\n\nFunctions\ndef render_stats_content(\n    selected_files: List[SelectedFile],  # Current selection\n    urls: SourceSelectUrls,  # URL bundle\n    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # Extraction results\n    verified: bool = False,  # Whether selection is verified\n    oob: bool = False,  # Whether to render as OOB outerHTML swap\n) -&gt; Div:  # Stats content (inner content only, no container chrome)\n    \"Render stats panel inner content for OOB updates.\"\ndef render_stats_panel(\n    selected_files: List[SelectedFile],  # Current selection\n    urls: SourceSelectUrls,  # URL bundle\n    extraction_results: Optional[Dict[str, ExtractionResult]] = None,  # Extraction results\n    verified: bool = False,  # Whether selection is verified\n) -&gt; Div:  # Full stats panel with container chrome\n    \"Render the full stats panel (container + content) for initial render.\"\n\n\nVariables\n_STATS_CONTAINER_CLS\n\n\n\ncomponents/step_renderer (step_renderer.ipynb)\n\nMain step renderer combining all panels for the source selection step\n\n\nImport\nfrom cjm_transcription_source_select.components.step_renderer import (\n    render_source_select_step\n)\n\n\nFunctions\ndef _create_parent_keyboard_manager() -&gt; ZoneManager:  # Parent keyboard manager for hierarchy\n    \"Create the parent keyboard manager with two ghost zones for column switching.\"\ndef _generate_hierarchy_js() -&gt; Script:  # Script element with hierarchy wiring\n    \"Generate JavaScript for keyboard system hierarchy and child activation.\"\ndef render_source_select_step(\n    selected_files: List[SelectedFile],  # Ordered selection\n    extraction_results: Dict[str, ExtractionResult],  # video_path -&gt; result\n    verified: bool,  # Whether selection is verified\n    urls: SourceSelectUrls,  # URL bundle\n    render_browser_panel_fn: Callable,  # Browser panel render function from init_browser_router\n    selected_folders: Optional[List[str]] = None,  # Folder paths for checkbox sync\n) -&gt; Div:  # Complete step view\n    \"Render the complete source selection step.\"\n\n\nVariables\n_VIEWPORT_FIT_CONFIG\n_ZONE_FOCUS_CLASSES\n\n\n\nutils (utils.ipynb)\n\nUtility functions for file type detection, duration formatting, and extension filtering\n\n\nImport\nfrom cjm_transcription_source_select.utils import (\n    AUDIO_EXTENSIONS,\n    VIDEO_EXTENSIONS,\n    MEDIA_EXTENSIONS,\n    detect_file_type,\n    is_media_file,\n    format_duration\n)\n\n\nFunctions\ndef detect_file_type(\n    file_path: str  # Path to the file\n) -&gt; Optional[str]:  # \"audio\", \"video\", or None if not a media file\n    \"Detect whether a file is audio, video, or not a media file based on extension.\"\ndef is_media_file(\n    file_path: str  # Path to the file\n) -&gt; bool:  # True if the file has a supported media extension\n    \"Check if a file has a supported audio or video extension.\"\ndef format_duration(\n    seconds: Optional[float]  # Duration in seconds, or None\n) -&gt; str:  # Formatted duration string (e.g. \"1:23:45\" or \"42:17\")\n    \"Format a duration in seconds as H:MM:SS or MM:SS.\"\n\n\nVariables\nAUDIO_EXTENSIONS\nVIDEO_EXTENSIONS\nMEDIA_EXTENSIONS\n\n\n\nroutes/verify (verify.ipynb)\n\nRoute handler for verify selection + audio extraction from video sources\n\n\nImport\nfrom cjm_transcription_source_select.routes.verify import (\n    logger,\n    init_verify_router\n)\n\n\nFunctions\nasync def _handle_verify(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    workflow_id: str,  # Workflow identifier\n    urls: SourceSelectUrls,  # URL bundle\n    service: SourceSelectService,  # Source select service\n    sess,  # FastHTML session\n):  # OOB tuple (stats content, selection panel)\n    \"Verify selection and extract audio from video files.\"\ndef init_verify_router(\n    state_store: SQLiteWorkflowStateStore,  # Workflow state store\n    workflow_id: str,  # Workflow identifier\n    urls: SourceSelectUrls,  # Mutable URL bundle\n    service: SourceSelectService,  # Source select service\n    prefix: str = \"/verify\",  # Route prefix\n) -&gt; Tuple[APIRouter, Dict[str, Callable]]:  # (router, route_dict)\n    \"Initialize verify route for selection verification and audio extraction.\"",
+    "crumbs": [
+      "cjm-transcription-source-select"
+    ]
+  },
+  {
+    "objectID": "utils.html",
+    "href": "utils.html",
+    "title": "utils",
+    "section": "",
+    "text": "Supported audio and video file extensions for filtering. These use dotted format (e.g. .mp3) to match Path.suffix.lower() directly.",
+    "crumbs": [
+      "utils"
+    ]
+  },
+  {
+    "objectID": "utils.html#extension-sets",
+    "href": "utils.html#extension-sets",
+    "title": "utils",
+    "section": "",
+    "text": "Supported audio and video file extensions for filtering. These use dotted format (e.g. .mp3) to match Path.suffix.lower() directly.",
+    "crumbs": [
+      "utils"
+    ]
+  },
+  {
+    "objectID": "utils.html#file-type-detection",
+    "href": "utils.html#file-type-detection",
+    "title": "utils",
+    "section": "File Type Detection",
+    "text": "File Type Detection\n\n\ndetect_file_type\n\ndef detect_file_type(\n    file_path:str, # Path to the file\n)-&gt;Optional: # \"audio\", \"video\", or None if not a media file\n\nDetect whether a file is audio, video, or not a media file based on extension.\n\n\n\nis_media_file\n\ndef is_media_file(\n    file_path:str, # Path to the file\n)-&gt;bool: # True if the file has a supported media extension\n\nCheck if a file has a supported audio or video extension.",
+    "crumbs": [
+      "utils"
+    ]
+  },
+  {
+    "objectID": "utils.html#duration-formatting",
+    "href": "utils.html#duration-formatting",
+    "title": "utils",
+    "section": "Duration Formatting",
+    "text": "Duration Formatting\n\n\nformat_duration\n\ndef format_duration(\n    seconds:Optional, # Duration in seconds, or None\n)-&gt;str: # Formatted duration string (e.g. \"1:23:45\" or \"42:17\")\n\nFormat a duration in seconds as H:MM:SS or MM:SS.",
+    "crumbs": [
+      "utils"
+    ]
+  },
+  {
+    "objectID": "utils.html#tests",
+    "href": "utils.html#tests",
+    "title": "utils",
+    "section": "Tests",
+    "text": "Tests\n\n# File type detection\nassert detect_file_type(\"/path/to/file.mp3\") == \"audio\"\nassert detect_file_type(\"/path/to/file.MP4\") == \"video\"\nassert detect_file_type(\"/path/to/file.txt\") is None\nassert detect_file_type(\"/path/to/file.wav\") == \"audio\"\nassert detect_file_type(\"/path/to/file.mkv\") == \"video\"\n\n# Media file check\nassert is_media_file(\"/path/to/file.mp3\") == True\nassert is_media_file(\"/path/to/file.mp4\") == True\nassert is_media_file(\"/path/to/file.txt\") == False\n\n# Duration formatting\nassert format_duration(None) == \"--:--\"\nassert format_duration(0) == \"0:00\"\nassert format_duration(65) == \"1:05\"\nassert format_duration(3661) == \"1:01:01\"\nassert format_duration(2537) == \"42:17\"\n\n# File size formatting (reused from cjm-file-discovery)\nassert format_file_size(0) == \"0 B\"\nassert format_file_size(512) == \"512 B\"\nassert format_file_size(1048576) == \"1.0 MB\"\nassert format_file_size(1073741824) == \"1.0 GB\"\n\nprint(\"All tests passed!\")\n\nAll tests passed!",
+    "crumbs": [
+      "utils"
+    ]
+  }
+]
