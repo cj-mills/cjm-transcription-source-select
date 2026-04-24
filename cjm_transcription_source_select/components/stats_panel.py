@@ -23,8 +23,9 @@ from cjm_fasthtml_tailwind.core.base import combine_classes
 
 from cjm_fasthtml_lucide_icons.factory import lucide_icon
 
-# Design system recipes (V10 P2 content_panel)
+# Design system recipes (V10 P2 content_panel, V11 icon-size roles)
 from cjm_fasthtml_design_system.panels import panels
+from cjm_fasthtml_design_system.icons import icons
 
 from ..models import SourceSelectUrls, SelectedFile, ExtractionResult
 from ..html_ids import SourceSelectHtmlIds
@@ -94,7 +95,7 @@ def render_stats_content(
     if verified:
         return Div(
             Div(
-                lucide_icon("circle-check", size=5, cls=str(text_dui.success)),
+                lucide_icon("circle-check", size=icons.status_inline, cls=str(text_dui.success)),
                 Span(
                     f"Selection verified · {total} audio source{'s' if total != 1 else ''} ready",
                     cls=combine_classes(font_size.sm, text_dui.success, m.l(2))

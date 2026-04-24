@@ -25,6 +25,9 @@ from cjm_fasthtml_tailwind.core.base import combine_classes
 
 from cjm_fasthtml_lucide_icons.factory import lucide_icon
 
+# Design system recipes (V11 icon-size roles)
+from cjm_fasthtml_design_system.icons import icons
+
 from cjm_fasthtml_sortable_queue.config import SortableQueueConfig
 from cjm_fasthtml_sortable_queue.html_ids import SortableQueueHtmlIds
 from cjm_fasthtml_sortable_queue.models import SortableQueueUrls
@@ -126,7 +129,7 @@ def _make_render_content(
             ),
             # Preview button
             Button(
-                lucide_icon("eye", size=4, cls=str(text_dui.base_content.opacity(60))),
+                lucide_icon("eye", size=icons.icon_button, cls=str(text_dui.base_content.opacity(60))),
                 cls=combine_classes(btn, btn_styles.ghost, btn_sizes.xs, m.l(1)),
                 hx_post=urls.preview,
                 hx_vals=json.dumps({"path": path}),

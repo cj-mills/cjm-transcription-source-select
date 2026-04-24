@@ -31,9 +31,10 @@ from cjm_fasthtml_tailwind.core.base import combine_classes
 
 from cjm_fasthtml_lucide_icons.factory import lucide_icon
 
-# Design system recipes (V10 P2 content_panel + I1 inset divider)
+# Design system recipes (V10 P2 content_panel + I1 inset divider, V11 icon-size roles)
 from cjm_fasthtml_design_system.panels import panels
 from cjm_fasthtml_design_system.insets import insets
+from cjm_fasthtml_design_system.icons import icons
 
 from ..models import SelectedFile
 from ..html_ids import SourceSelectHtmlIds
@@ -92,7 +93,7 @@ def render_preview_panel(
                 id=SourceSelectHtmlIds.PREVIEW_TOGGLE,
             ),
             Div(
-                lucide_icon("eye", size=4, cls=str(text_dui.base_content.opacity(60))),
+                lucide_icon("eye", size=icons.status_inline, cls=str(text_dui.base_content.opacity(60))),
                 Span("Preview", cls=combine_classes(font_weight.bold, font_size.sm, m.l(2))),
                 cls=combine_classes(collapse_title, str(flex_display), items.center)
             ),
@@ -141,7 +142,7 @@ def render_preview_panel(
         ),
         # Collapse title
         Div(
-            lucide_icon("eye", size=4, cls=str(text_dui.base_content.opacity(60))),
+            lucide_icon("eye", size=icons.status_inline, cls=str(text_dui.base_content.opacity(60))),
             Span("Preview", cls=combine_classes(font_weight.bold, font_size.sm, m.l(2))),
             Span(filename, cls=combine_classes(font_size.sm, text_dui.base_content.opacity(60), m.l(2), truncate)),
             type_badge,
